@@ -554,6 +554,23 @@ function getBoardCell(x, y) {
   return { r, c };
 }
 
+canvas.addEventListener('mousemove', (e) => {
+  if (!currentShape || cpuThinking || gameOver) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  const pos = getBoardCell(e.clientX, e.clientY);
+  const midR = Math.floor(Math.max(...currentShape.map(s => s[0])) / 2);
+  const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
+  ghostPos = { r: pos.r - midR, c: pos.c - midC };
+  drawBoard();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (ghostPos) {
+    ghostPos = null;
+    drawBoard();
+  }
+});
+
 canvas.addEventListener('click', (e) => {
   if (gameOver || cpuThinking) return;
   if (isCpuPlayer(currentPlayer)) return;
