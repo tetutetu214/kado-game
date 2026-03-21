@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ブロックス</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #1a1a2e; color: #eee; touch-action: none; }
+
+#app { display: flex; flex-direction: column; height: 100%; width: 100%; }
+
+/* Header */
+#header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #16213e; }
+#header h1 { font-size: 18px; letter-spacing: 2px; }
+#turn-indicator { font-size: 14px; font-weight: bold; padding: 4px 12px; border-radius: 12px; }
+#score-btn { background: none; border: 1px solid #555; color: #eee; padding: 4px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+/* Board area */
+#board-container { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; min-height: 0; }
+#board-wrapper { position: relative; }
+canvas#board { display: block; }
+
+/* Piece panel */
+#piece-panel { height: 180px; min-height: 180px; background: #16213e; border-top: 2px solid #333; display: flex; flex-direction: column; }
+#piece-controls { display: flex; justify-content: center; gap: 12px; padding: 6px 0; }
+#piece-controls button { background: #0f3460; border: none; color: #eee; width: 40px; height: 32px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+#piece-controls button:active { background: #e94560; }
+#piece-list { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; align-items: center; gap: 8px; padding: 0 10px; -webkit-overflow-scrolling: touch; }
+.piece-item { flex-shrink: 0; cursor: pointer; border: 2px solid transparent; border-radius: 6px; padding: 4px; }
+.piece-item.selected { border-color: #fff; background: rgba(255,255,255,0.1); }
+.piece-item.used { opacity: 0.2; pointer-events: none; }
+
+/* Modal */
+#modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+#modal-overlay.show { display: flex; }
+#modal { background: #16213e; border-radius: 16px; padding: 24px; text-align: center; max-width: 340px; width: 90%; }
+#modal h2 { margin-bottom: 16px; font-size: 20px; }
+#modal .scores { margin-bottom: 16px; }
+#modal .score-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 16px; }
+#modal button { background: #e94560; border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 8px; }
+
+/* Pass button */
+#pass-btn { background: #e94560; border: none; color: #fff; padding: 4px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+
+/* Start screen */
+#start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; }
+#start-screen h1 { font-size: 32px; letter-spacing: 4px; margin-bottom: 10px; }
+#start-screen p { font-size: 14px; color: #aaa; margin-bottom: 10px; }
+.start-btn { background: #0f3460; border: none; color: #eee; padding: 16px 40px; border-radius: 12px; font-size: 18px; cursor: pointer; width: 260px; text-align: center; }
+.start-btn:active { background: #e94560; }
+.start-btn .sub { font-size: 12px; color: #aaa; display: block; margin-top: 4px; }
+
+/* CPU thinking indicator */
+#cpu-thinking { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 50; }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="start-screen">
+  <h1>ブロックス</h1>
+  <p>ボードゲームの定番をiPhoneで</p>
+  <button class="start-btn" onclick="startGame('cpu')">
+    1人 vs CPU×3
+    <span class="sub">コンピュータと対戦</span>
+  </button>
+  <button class="start-btn" onclick="startGame('local')">
+    4人対戦
+    <span class="sub">ローカルマルチプレイ</span>
+  </button>
+</div>
+
+<!-- Game Screen -->
+<div id="app" style="display:none;">
+  <div id="header">
+    <h1>ブロックス</h1>
+    <span id="turn-indicator">● P1</span>
+    <button id="score-btn" onclick="showScores()">スコア</button>
+  </div>
+  <div id="board-container">
+    <div id="board-wrapper">
+      <canvas id="board"></canvas>
+      <div id="cpu-thinking">CPU思考中...</div>
+    </div>
+  </div>
+  <div id="piece-panel">
+    <div id="piece-controls">
+      <button onclick="rotatePiece()">↻</button>
+      <button onclick="flipPiece()">↔</button>
+      <button id="pass-btn" onclick="passTurn()">パス</button>
+    </div>
+    <div id="piece-list"></div>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-title">スコア</h2>
+    <div id="modal-body"></div>
+    <button onclick="closeModal()">閉じる</button>
+    <button id="restart-btn" style="display:none;margin-left:8px;" onclick="backToTitle()">タイトルへ</button>
+  </div>
+</div>
+
+<script>
+// ===== Constants =====
+const BOARD_SIZE = 20;
+const PLAYERS = [
+  { id: 0, name: 'あなた', color: '#e63946', light: '#ff6b6b' },
+  { id: 1, name: 'CPU 1', color: '#457b9d', light: '#6bb5e9' },
+  { id: 2, name: 'CPU 2', color: '#2a9d8f', light: '#5dd9cb' },
+  { id: 3, name: 'CPU 3', color: '#e9c46a', light: '#fff3a0' }
+];
+
+const PLAYERS_LOCAL = [
+  { id: 0, name: 'P1', color: '#e63946', light: '#ff6b6b' },
+  { id: 1, name: 'P2', color: '#457b9d', light: '#6bb5e9' },
+  { id: 2, name: 'P3', color: '#2a9d8f', light: '#5dd9cb' },
+  { id: 3, name: 'P4', color: '#e9c46a', light: '#fff3a0' }
+];
+
+// All 21 Blokus pieces (relative coordinates)
+const PIECE_SHAPES = [
+  [[0,0]],
+  [[0,0],[1,0]],
+  [[0,0],[1,0],[2,0]],
+  [[0,0],[1,0],[1,1]],
+  [[0,0],[1,0],[2,0],[3,0]],
+  [[0,0],[1,0],[2,0],[2,1]],
+  [[0,0],[1,0],[2,0],[1,1]],
+  [[0,0],[1,0],[0,1],[1,1]],
+  [[0,0],[1,0],[1,1],[2,1]],
+  [[0,0],[1,0],[2,0],[3,0],[4,0]],
+  [[0,0],[1,0],[2,0],[3,0],[3,1]],
+  [[0,0],[1,0],[2,0],[3,0],[2,1]],
+  [[0,0],[1,0],[2,0],[3,0],[1,1]],
+  [[0,0],[1,0],[2,0],[2,1],[3,1]],
+  [[0,0],[1,0],[1,1],[2,1],[3,1]],
+  [[0,0],[1,0],[2,0],[0,1],[2,1]],
+  [[0,0],[1,0],[2,0],[1,1],[1,2]],
+  [[0,0],[1,0],[1,1],[2,1],[2,2]],
+  [[0,0],[1,0],[1,1],[1,2],[2,2]],
+  [[0,0],[1,0],[1,1],[2,1],[1,2]],
+  [[0,0],[0,1],[1,1],[2,1],[2,2]],
+];
+
+// ===== Game State =====
+let board = [];
+let currentPlayer = 0;
+let playerPieces = [];
+let selectedPieceIdx = null;
+let currentShape = null;
+let ghostPos = null;
+let passCount = 0;
+let gameOver = false;
+let playerPassed = [false, false, false, false];
+let gameMode = 'cpu'; // 'cpu' or 'local'
+let players = PLAYERS;
+let cpuThinking = false;
+
+// ===== Canvas Setup =====
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+let cellSize = 0;
+
+function resizeBoard() {
+  const container = document.getElementById('board-container');
+  const available = Math.min(container.clientWidth, container.clientHeight) - 8;
+  cellSize = Math.floor(available / BOARD_SIZE);
+  const size = cellSize * BOARD_SIZE;
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  drawBoard();
+}
+
+// ===== Board Drawing =====
+function drawBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const x = c * cellSize;
+      const y = r * cellSize;
+      if (board[r][c] >= 0) {
+        ctx.fillStyle = players[board[r][c]].color;
+        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.strokeStyle = players[board[r][c]].light;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+      } else {
+        ctx.fillStyle = (r + c) % 2 === 0 ? '#2a2a4a' : '#252545';
+        ctx.fillRect(x, y, cellSize, cellSize);
+      }
+    }
+  }
+
+  ctx.strokeStyle = '#333355';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= BOARD_SIZE; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * cellSize, 0);
+    ctx.lineTo(i * cellSize, BOARD_SIZE * cellSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i * cellSize);
+    ctx.lineTo(BOARD_SIZE * cellSize, i * cellSize);
+    ctx.stroke();
+  }
+
+  // Starting corners
+  const corners = [[0,0],[0,BOARD_SIZE-1],[BOARD_SIZE-1,BOARD_SIZE-1],[BOARD_SIZE-1,0]];
+  corners.forEach((pos, i) => {
+    if (board[pos[0]][pos[1]] < 0) {
+      ctx.fillStyle = players[i].color;
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(pos[1] * cellSize, pos[0] * cellSize, cellSize, cellSize);
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  // Ghost preview
+  if (ghostPos && currentShape) {
+    const valid = canPlace(currentPlayer, currentShape, ghostPos.r, ghostPos.c);
+    currentShape.forEach(([dr, dc]) => {
+      const rr = ghostPos.r + dr;
+      const cc = ghostPos.c + dc;
+      if (rr >= 0 && rr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE) {
+        ctx.fillStyle = valid ? players[currentPlayer].light : '#ff0000';
+        ctx.globalAlpha = 0.4;
+        ctx.fillRect(cc * cellSize, rr * cellSize, cellSize, cellSize);
+        ctx.globalAlpha = 1;
+      }
+    });
+  }
+}
+
+// ===== Piece Logic =====
+function rotateCW(shape) {
+  return shape.map(([r, c]) => [c, -r]);
+}
+
+function flipH(shape) {
+  return shape.map(([r, c]) => [r, -c]);
+}
+
+function normalize(shape) {
+  const minR = Math.min(...shape.map(s => s[0]));
+  const minC = Math.min(...shape.map(s => s[1]));
+  return shape.map(([r, c]) => [r - minR, c - minC]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
+
+// Get all unique orientations of a shape (up to 8: 4 rotations x 2 flips)
+function getAllOrientations(shape) {
+  const orientations = [];
+  const seen = new Set();
+  let s = shape.map(c => [...c]);
+  for (let flip = 0; flip < 2; flip++) {
+    for (let rot = 0; rot < 4; rot++) {
+      const norm = normalize(s);
+      const key = JSON.stringify(norm);
+      if (!seen.has(key)) {
+        seen.add(key);
+        orientations.push(norm);
+      }
+      s = rotateCW(s);
+    }
+    s = flipH(shape.map(c => [...c]));
+  }
+  return orientations;
+}
+
+function rotatePiece() {
+  if (cpuThinking) return;
+  if (currentShape) {
+    currentShape = normalize(rotateCW(currentShape));
+    drawBoard();
+    updatePieceList();
+  }
+}
+
+function flipPiece() {
+  if (cpuThinking) return;
+  if (currentShape) {
+    currentShape = normalize(flipH(currentShape));
+    drawBoard();
+    updatePieceList();
+  }
+}
+
+// ===== Placement Validation =====
+function isFirstMove(player) {
+  for (let r = 0; r < BOARD_SIZE; r++)
+    for (let c = 0; c < BOARD_SIZE; c++)
+      if (board[r][c] === player) return false;
+  return true;
+}
+
+function getStartCorner(player) {
+  const corners = [[0,0],[0,BOARD_SIZE-1],[BOARD_SIZE-1,BOARD_SIZE-1],[BOARD_SIZE-1,0]];
+  return corners[player];
+}
+
+function canPlace(player, shape, br, bc) {
+  const cells = shape.map(([dr, dc]) => [br + dr, bc + dc]);
+
+  for (const [r, c] of cells) {
+    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
+    if (board[r][c] >= 0) return false;
+  }
+
+  for (const [r, c] of cells) {
+    const adj = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for (const [ar, ac] of adj) {
+      if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
+        if (board[ar][ac] === player) return false;
+      }
+    }
+  }
+
+  if (isFirstMove(player)) {
+    const [sr, sc] = getStartCorner(player);
+    return cells.some(([r, c]) => r === sr && c === sc);
+  }
+
+  for (const [r, c] of cells) {
+    const diag = [[r-1,c-1],[r-1,c+1],[r+1,c-1],[r+1,c+1]];
+    for (const [dr, dc] of diag) {
+      if (dr >= 0 && dr < BOARD_SIZE && dc >= 0 && dc < BOARD_SIZE) {
+        if (board[dr][dc] === player) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function placePiece(player, shape, br, bc) {
+  shape.forEach(([dr, dc]) => {
+    board[br + dr][bc + dc] = player;
+  });
+}
+
+// ===== CPU AI =====
+function getCornerPositions(player) {
+  // Find all valid corner positions where the player can attach
+  const corners = [];
+  if (isFirstMove(player)) {
+    const [sr, sc] = getStartCorner(player);
+    corners.push([sr, sc]);
+    return corners;
+  }
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (board[r][c] >= 0) continue;
+      // Check if diagonal-adjacent to player
+      let hasDiag = false;
+      let hasEdge = false;
+      const diag = [[r-1,c-1],[r-1,c+1],[r+1,c-1],[r+1,c+1]];
+      for (const [dr, dc] of diag) {
+        if (dr >= 0 && dr < BOARD_SIZE && dc >= 0 && dc < BOARD_SIZE && board[dr][dc] === player) {
+          hasDiag = true;
+          break;
+        }
+      }
+      const adj = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for (const [ar, ac] of adj) {
+        if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE && board[ar][ac] === player) {
+          hasEdge = true;
+          break;
+        }
+      }
+      if (hasDiag && !hasEdge) corners.push([r, c]);
+    }
+  }
+  return corners;
+}
+
+function countNewCorners(player, shape, br, bc) {
+  // Count how many new diagonal corners this placement creates
+  const placed = new Set(shape.map(([dr, dc]) => `${br+dr},${bc+dc}`));
+  let count = 0;
+  for (const [dr, dc] of shape) {
+    const r = br + dr;
+    const c = bc + dc;
+    const diag = [[r-1,c-1],[r-1,c+1],[r+1,c-1],[r+1,c+1]];
+    for (const [cr, cc] of diag) {
+      if (cr < 0 || cr >= BOARD_SIZE || cc < 0 || cc >= BOARD_SIZE) continue;
+      if (board[cr][cc] >= 0) continue;
+      if (placed.has(`${cr},${cc}`)) continue;
+      // Check not edge-adjacent to any of our placed cells or existing
+      let edgeBlocked = false;
+      const adj = [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]];
+      for (const [ar, ac] of adj) {
+        if (placed.has(`${ar},${ac}`)) { edgeBlocked = true; break; }
+        if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE && board[ar][ac] === player) {
+          edgeBlocked = true; break;
+        }
+      }
+      if (!edgeBlocked) count++;
+    }
+  }
+  return count;
+}
+
+function cpuMove(player) {
+  const pieces = playerPieces[player];
+  const cornerPositions = getCornerPositions(player);
+  if (cornerPositions.length === 0 && !isFirstMove(player)) return null;
+
+  let bestMove = null;
+  let bestScore = -Infinity;
+
+  // Sort pieces by size (largest first) for better play
+  const pieceIndices = pieces.map((p, i) => i).filter(i => !pieces[i].used);
+  pieceIndices.sort((a, b) => pieces[b].shape.length - pieces[a].shape.length);
+
+  for (const idx of pieceIndices) {
+    const orientations = getAllOrientations(pieces[idx].shape);
+
+    for (const orient of orientations) {
+      for (const [cr, cc] of cornerPositions) {
+        // Try placing each cell of the piece on each corner position
+        for (const [dr, dc] of orient) {
+          const br = cr - dr;
+          const bc = cc - dc;
+          if (canPlace(player, orient, br, bc)) {
+            const size = orient.length;
+            const newCorners = countNewCorners(player, orient, br, bc);
+            // Score: prioritize large pieces and creating more corners
+            // Add slight randomness for variety
+            const score = size * 10 + newCorners * 3 + Math.random() * 2;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMove = { idx, shape: orient, r: br, c: bc };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return bestMove;
+}
+
+function executeCpuTurn() {
+  if (gameOver || !isCpuPlayer(currentPlayer)) return;
+
+  cpuThinking = true;
+  document.getElementById('cpu-thinking').style.display = 'block';
+
+  // Use setTimeout to allow UI to update
+  setTimeout(() => {
+    const move = cpuMove(currentPlayer);
+    if (move) {
+      placePiece(currentPlayer, move.shape, move.r, move.c);
+      playerPieces[currentPlayer][move.idx].used = true;
+      passCount = 0;
+    } else {
+      playerPassed[currentPlayer] = true;
+      passCount++;
+    }
+
+    cpuThinking = false;
+    document.getElementById('cpu-thinking').style.display = 'none';
+
+    if (passCount >= 4 || checkAllPassed()) {
+      endGame();
+      return;
+    }
+
+    currentPlayer = (currentPlayer + 1) % 4;
+
+    // Skip passed players
+    let skipped = 0;
+    while (playerPassed[currentPlayer] && skipped < 4) {
+      currentPlayer = (currentPlayer + 1) % 4;
+      skipped++;
+    }
+    if (skipped >= 4) { endGame(); return; }
+
+    updateTurnIndicator();
+    updatePieceList();
+    drawBoard();
+
+    // If next player is also CPU, chain the turn
+    if (isCpuPlayer(currentPlayer) && !gameOver) {
+      setTimeout(executeCpuTurn, 400);
+    }
+  }, 300);
+}
+
+function isCpuPlayer(p) {
+  return gameMode === 'cpu' && p !== 0;
+}
+
+function checkAllPassed() {
+  return playerPassed.every(p => p);
+}
+
+// ===== Piece Selection UI =====
+function updatePieceList() {
+  const list = document.getElementById('piece-list');
+  list.innerHTML = '';
+  const pieces = playerPieces[currentPlayer];
+  pieces.forEach((p, idx) => {
+    const div = document.createElement('div');
+    div.className = 'piece-item' + (idx === selectedPieceIdx ? ' selected' : '') + (p.used ? ' used' : '');
+
+    const shape = idx === selectedPieceIdx && currentShape ? currentShape : p.shape;
+    const maxR = Math.max(...shape.map(s => s[0])) + 1;
+    const maxC = Math.max(...shape.map(s => s[1])) + 1;
+    const cs = Math.min(20, Math.floor(60 / Math.max(maxR, maxC)));
+    const cvs = document.createElement('canvas');
+    cvs.width = maxC * cs + 2;
+    cvs.height = maxR * cs + 2;
+    const cx = cvs.getContext('2d');
+    shape.forEach(([r, c]) => {
+      cx.fillStyle = players[currentPlayer].color;
+      cx.fillRect(c * cs + 1, r * cs + 1, cs - 1, cs - 1);
+    });
+    div.appendChild(cvs);
+
+    if (!p.used) {
+      div.onclick = () => selectPiece(idx);
+    }
+    list.appendChild(div);
+  });
+}
+
+function selectPiece(idx) {
+  if (cpuThinking) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  if (selectedPieceIdx === idx) {
+    selectedPieceIdx = null;
+    currentShape = null;
+  } else {
+    selectedPieceIdx = idx;
+    currentShape = [...playerPieces[currentPlayer][idx].shape.map(s => [...s])];
+  }
+  ghostPos = null;
+  drawBoard();
+  updatePieceList();
+}
+
+// ===== Touch / Click on Board =====
+function getBoardCell(x, y) {
+  const rect = canvas.getBoundingClientRect();
+  const c = Math.floor((x - rect.left) / cellSize);
+  const r = Math.floor((y - rect.top) / cellSize);
+  return { r, c };
+}
+
+canvas.addEventListener('click', (e) => {
+  if (gameOver || cpuThinking) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  const pos = getBoardCell(e.clientX, e.clientY);
+  handleBoardTap(pos);
+});
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameOver || cpuThinking) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  const touch = e.touches[0];
+  const pos = getBoardCell(touch.clientX, touch.clientY);
+  handleBoardTap(pos);
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!currentShape || cpuThinking) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  const touch = e.touches[0];
+  const pos = getBoardCell(touch.clientX, touch.clientY);
+  ghostPos = { r: pos.r - 2, c: pos.c - Math.floor(Math.max(...currentShape.map(s=>s[1])) / 2) };
+  drawBoard();
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (ghostPos && currentShape && !cpuThinking && !isCpuPlayer(currentPlayer)) {
+    handleBoardTap(ghostPos);
+  }
+}, { passive: false });
+
+function handleBoardTap(pos) {
+  if (!currentShape || selectedPieceIdx === null) {
+    ghostPos = null;
+    drawBoard();
+    return;
+  }
+
+  const midR = Math.floor(Math.max(...currentShape.map(s => s[0])) / 2);
+  const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
+  const br = pos.r - midR;
+  const bc = pos.c - midC;
+
+  if (canPlace(currentPlayer, currentShape, br, bc)) {
+    placePiece(currentPlayer, currentShape, br, bc);
+    playerPieces[currentPlayer][selectedPieceIdx].used = true;
+    selectedPieceIdx = null;
+    currentShape = null;
+    ghostPos = null;
+    passCount = 0;
+
+    nextTurn();
+  } else {
+    ghostPos = { r: br, c: bc };
+    drawBoard();
+  }
+}
+
+// ===== Turn Management =====
+function nextTurn() {
+  currentPlayer = (currentPlayer + 1) % 4;
+
+  let skipped = 0;
+  while (playerPassed[currentPlayer] && skipped < 4) {
+    currentPlayer = (currentPlayer + 1) % 4;
+    skipped++;
+  }
+
+  if (skipped >= 4 || passCount >= 4) {
+    endGame();
+    return;
+  }
+
+  updateTurnIndicator();
+  updatePieceList();
+  drawBoard();
+
+  // If CPU player's turn, auto-play
+  if (isCpuPlayer(currentPlayer) && !gameOver) {
+    setTimeout(executeCpuTurn, 500);
+  }
+}
+
+function passTurn() {
+  if (gameOver || cpuThinking) return;
+  if (isCpuPlayer(currentPlayer)) return;
+  playerPassed[currentPlayer] = true;
+  passCount++;
+  selectedPieceIdx = null;
+  currentShape = null;
+  ghostPos = null;
+  if (passCount >= 4 || checkAllPassed()) {
+    endGame();
+  } else {
+    nextTurn();
+  }
+}
+
+function updateTurnIndicator() {
+  const el = document.getElementById('turn-indicator');
+  const p = players[currentPlayer];
+  el.textContent = '● ' + p.name;
+  el.style.background = p.color;
+}
+
+// ===== Scoring =====
+function getScore(player) {
+  const pieces = playerPieces[player];
+  let total = 0;
+  pieces.forEach(p => {
+    if (!p.used) total -= p.shape.length;
+  });
+  const allUsed = pieces.every(p => p.used);
+  if (allUsed) total += 15;
+  return total;
+}
+
+function showScores() {
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'scores';
+  players.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `<span style="color:${p.color}">● ${p.name}</span><span>${getScore(i)}点</span>`;
+    div.appendChild(row);
+  });
+  body.appendChild(div);
+  document.getElementById('modal-title').textContent = 'スコア';
+  document.getElementById('restart-btn').style.display = gameOver ? 'inline-block' : 'none';
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function endGame() {
+  gameOver = true;
+  let best = -999, winner = 0;
+  players.forEach((p, i) => {
+    const s = getScore(i);
+    if (s > best) { best = s; winner = i; }
+  });
+
+  let title;
+  if (gameMode === 'cpu') {
+    title = winner === 0 ? '🏆 あなたの勝ち！' : `😢 ${players[winner].name} の勝ち`;
+  } else {
+    title = `🏆 ${players[winner].name} の勝ち！`;
+  }
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('restart-btn').style.display = 'inline-block';
+
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'scores';
+  players.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `<span style="color:${p.color}">● ${p.name}</span><span>${getScore(i)}点</span>`;
+    div.appendChild(row);
+  });
+  body.appendChild(div);
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+// ===== Start / Init =====
+function startGame(mode) {
+  gameMode = mode;
+  players = mode === 'cpu' ? PLAYERS : PLAYERS_LOCAL;
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  initGame();
+}
+
+function initGame() {
+  board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(-1));
+  currentPlayer = 0;
+  selectedPieceIdx = null;
+  currentShape = null;
+  ghostPos = null;
+  passCount = 0;
+  gameOver = false;
+  playerPassed = [false, false, false, false];
+  cpuThinking = false;
+
+  playerPieces = [];
+  for (let p = 0; p < 4; p++) {
+    playerPieces.push(
+      PIECE_SHAPES.map(shape => ({
+        shape: shape.map(s => [...s]),
+        used: false
+      }))
+    );
+  }
+
+  updateTurnIndicator();
+  resizeBoard();
+  updatePieceList();
+}
+
+function backToTitle() {
+  closeModal();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'flex';
+}
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('app').style.display !== 'none') resizeBoard();
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (document.getElementById('app').style.display !== 'none') resizeBoard();
+  }, 100);
+});
+</script>
+</body>
+</html>

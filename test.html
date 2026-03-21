@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブロックス テスト</title>
+<style>
+body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px; }
+.pass { color: #2a9d8f; }
+.fail { color: #e63946; font-weight: bold; }
+h2 { margin-top: 20px; color: #e9c46a; }
+#summary { font-size: 18px; margin-top: 24px; padding: 12px; border-radius: 8px; }
+#summary.all-pass { background: #1a3a2e; }
+#summary.has-fail { background: #3a1a1e; }
+</style>
+</head>
+<body>
+<h1>ブロックス - テスト結果</h1>
+<div id="results"></div>
+<div id="summary"></div>
+
+<script>
+// ===== テスト対象のロジックを再現 =====
+const BOARD_SIZE = 20;
+
+function rotateCW(shape) {
+  return shape.map(([r, c]) => [c, -r]);
+}
+
+function flipH(shape) {
+  return shape.map(([r, c]) => [r, -c]);
+}
+
+function normalize(shape) {
+  const minR = Math.min(...shape.map(s => s[0]));
+  const minC = Math.min(...shape.map(s => s[1]));
+  return shape.map(([r, c]) => [r - minR, c - minC]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
+
+function getAllOrientations(shape) {
+  const orientations = [];
+  const seen = new Set();
+  let s = shape.map(c => [...c]);
+  for (let flip = 0; flip < 2; flip++) {
+    for (let rot = 0; rot < 4; rot++) {
+      const norm = normalize(s);
+      const key = JSON.stringify(norm);
+      if (!seen.has(key)) {
+        seen.add(key);
+        orientations.push(norm);
+      }
+      s = rotateCW(s);
+    }
+    s = flipH(shape.map(c => [...c]));
+  }
+  return orientations;
+}
+
+function isFirstMove(board, player) {
+  for (let r = 0; r < BOARD_SIZE; r++)
+    for (let c = 0; c < BOARD_SIZE; c++)
+      if (board[r][c] === player) return false;
+  return true;
+}
+
+function getStartCorner(player) {
+  const corners = [[0,0],[0,BOARD_SIZE-1],[BOARD_SIZE-1,BOARD_SIZE-1],[BOARD_SIZE-1,0]];
+  return corners[player];
+}
+
+function canPlace(board, player, shape, br, bc) {
+  const cells = shape.map(([dr, dc]) => [br + dr, bc + dc]);
+  for (const [r, c] of cells) {
+    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
+    if (board[r][c] >= 0) return false;
+  }
+  for (const [r, c] of cells) {
+    const adj = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for (const [ar, ac] of adj) {
+      if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
+        if (board[ar][ac] === player) return false;
+      }
+    }
+  }
+  if (isFirstMove(board, player)) {
+    const [sr, sc] = getStartCorner(player);
+    return cells.some(([r, c]) => r === sr && c === sc);
+  }
+  for (const [r, c] of cells) {
+    const diag = [[r-1,c-1],[r-1,c+1],[r+1,c-1],[r+1,c+1]];
+    for (const [dr, dc] of diag) {
+      if (dr >= 0 && dr < BOARD_SIZE && dc >= 0 && dc < BOARD_SIZE) {
+        if (board[dr][dc] === player) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function placePiece(board, player, shape, br, bc) {
+  shape.forEach(([dr, dc]) => {
+    board[br + dr][bc + dc] = player;
+  });
+}
+
+function getScore(playerPieces, player) {
+  const pieces = playerPieces[player];
+  let total = 0;
+  pieces.forEach(p => {
+    if (!p.used) total -= p.shape.length;
+  });
+  const allUsed = pieces.every(p => p.used);
+  if (allUsed) total += 15;
+  return total;
+}
+
+function makeBoard() {
+  return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(-1));
+}
+
+// ===== テストフレームワーク =====
+let totalPass = 0;
+let totalFail = 0;
+const resultsEl = document.getElementById('results');
+
+function section(name) {
+  const h = document.createElement('h2');
+  h.textContent = name;
+  resultsEl.appendChild(h);
+}
+
+function assert(name, condition) {
+  const div = document.createElement('div');
+  if (condition) {
+    div.className = 'pass';
+    div.textContent = '  PASS: ' + name;
+    totalPass++;
+  } else {
+    div.className = 'fail';
+    div.textContent = '  FAIL: ' + name;
+    totalFail++;
+  }
+  resultsEl.appendChild(div);
+}
+
+function arrEq(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// ===== テスト実行 =====
+
+// --- rotateCW ---
+section('rotateCW (時計回り回転)');
+assert('1マスピースは回転しても変わらない',
+  arrEq(rotateCW([[0,0]]), [[0,0]]));
+assert('横棒 [[0,0],[1,0]] -> [[0,0],[0,-1]]',
+  arrEq(rotateCW([[0,0],[1,0]]), [[0,0],[0,-1]]));
+assert('L字 [[0,0],[1,0],[1,1]] を回転',
+  arrEq(rotateCW([[0,0],[1,0],[1,1]]), [[0,0],[0,-1],[1,-1]]));
+
+// --- flipH ---
+section('flipH (左右反転)');
+assert('1マスピースは反転しても変わらない',
+  arrEq(flipH([[0,0]]), [[0,0]]));
+assert('L字 [[0,0],[1,0],[1,1]] を反転',
+  arrEq(flipH([[0,0],[1,0],[1,1]]), [[0,0],[1,0],[1,-1]]));
+
+// --- normalize ---
+section('normalize (正規化)');
+assert('負の座標を正規化',
+  arrEq(normalize([[0,-1],[0,0],[1,0]]), [[0,0],[0,1],[1,1]]));
+assert('ソート順が正しい',
+  arrEq(normalize([[1,0],[0,1],[0,0]]), [[0,0],[0,1],[1,0]]));
+assert('大きなオフセットを正規化',
+  arrEq(normalize([[5,5],[5,6]]), [[0,0],[0,1]]));
+
+// --- getAllOrientations ---
+section('getAllOrientations (全方向取得)');
+assert('1マスピースは1方向のみ',
+  getAllOrientations([[0,0]]).length === 1);
+assert('2マス棒は2方向',
+  getAllOrientations([[0,0],[1,0]]).length === 2);
+assert('正方形 2x2 は1方向のみ',
+  getAllOrientations([[0,0],[1,0],[0,1],[1,1]]).length === 1);
+assert('L字は4方向',
+  getAllOrientations([[0,0],[1,0],[1,1]]).length === 4);
+assert('3マス棒は2方向',
+  getAllOrientations([[0,0],[1,0],[2,0]]).length === 2);
+assert('T字 [[0,0],[1,0],[2,0],[1,1]] は4方向',
+  getAllOrientations([[0,0],[1,0],[2,0],[1,1]]).length === 4);
+assert('S字 [[0,0],[1,0],[1,1],[2,1]] は4方向',
+  getAllOrientations([[0,0],[1,0],[1,1],[2,1]]).length === 4);
+assert('5マスのL字は8方向以下',
+  getAllOrientations([[0,0],[1,0],[2,0],[3,0],[3,1]]).length <= 8);
+
+// --- isFirstMove ---
+section('isFirstMove (初手判定)');
+{
+  const b = makeBoard();
+  assert('空のボードではプレイヤー0は初手', isFirstMove(b, 0));
+  assert('空のボードではプレイヤー1は初手', isFirstMove(b, 1));
+  b[0][0] = 0;
+  assert('配置後のプレイヤー0は初手でない', !isFirstMove(b, 0));
+  assert('配置後のプレイヤー1はまだ初手', isFirstMove(b, 1));
+}
+
+// --- getStartCorner ---
+section('getStartCorner (開始コーナー)');
+assert('プレイヤー0は左上 [0,0]', arrEq(getStartCorner(0), [0,0]));
+assert('プレイヤー1は右上 [0,19]', arrEq(getStartCorner(1), [0,19]));
+assert('プレイヤー2は右下 [19,19]', arrEq(getStartCorner(2), [19,19]));
+assert('プレイヤー3は左下 [19,0]', arrEq(getStartCorner(3), [19,0]));
+
+// --- canPlace (初手) ---
+section('canPlace - 初手配置');
+{
+  const b = makeBoard();
+  assert('プレイヤー0: コーナー[0,0]に1マス配置OK',
+    canPlace(b, 0, [[0,0]], 0, 0));
+  assert('プレイヤー0: コーナー以外[1,1]に1マス配置NG',
+    !canPlace(b, 0, [[0,0]], 1, 1));
+  assert('プレイヤー0: L字をコーナー含む位置に配置OK',
+    canPlace(b, 0, [[0,0],[1,0],[1,1]], 0, 0));
+  assert('プレイヤー1: コーナー[0,19]に配置OK',
+    canPlace(b, 1, [[0,0]], 0, 19));
+  assert('プレイヤー0: ボード外にはみ出す配置NG',
+    !canPlace(b, 0, [[0,0],[1,0]], -1, 0));
+}
+
+// --- canPlace (2手目以降) ---
+section('canPlace - 2手目以降');
+{
+  const b = makeBoard();
+  b[0][0] = 0; // プレイヤー0が[0,0]に配置済み
+
+  assert('角で接する[1,1]に配置OK',
+    canPlace(b, 0, [[0,0]], 1, 1));
+  assert('辺で接する[1,0]に配置NG',
+    !canPlace(b, 0, [[0,0]], 1, 0));
+  assert('辺で接する[0,1]に配置NG',
+    !canPlace(b, 0, [[0,0]], 0, 1));
+  assert('角でも辺でも接しない[2,2]に配置NG',
+    !canPlace(b, 0, [[0,0]], 2, 2));
+  assert('既に置いてある場所に配置NG',
+    !canPlace(b, 0, [[0,0]], 0, 0));
+}
+
+// --- canPlace (複数マスピース) ---
+section('canPlace - 複数マスピース');
+{
+  const b = makeBoard();
+  b[0][0] = 0;
+
+  // L字ピースで角接触する配置
+  assert('L字が角接触する配置OK',
+    canPlace(b, 0, [[0,0],[0,1],[1,0]], 1, 1));
+
+  // ピースの一部が辺で接する
+  assert('ピースの一部が辺で接する配置NG',
+    !canPlace(b, 0, [[0,0],[0,1]], 0, 1));
+
+  // ボード端で範囲外にはみ出し
+  assert('ボード端ではみ出す配置NG',
+    !canPlace(b, 0, [[0,0],[1,0]], 19, 19));
+}
+
+// --- canPlace (他プレイヤーの隣) ---
+section('canPlace - 他プレイヤーとの干渉');
+{
+  const b = makeBoard();
+  b[0][0] = 0;
+  b[0][19] = 1;
+  b[1][18] = 1; // プレイヤー1の2手目相当
+
+  assert('他プレイヤーの辺隣でも自分の角接触あればOK',
+    (() => {
+      // プレイヤー0が[1,1]に配置（[0,0]の角）
+      // [1,1]は他のプレイヤーとは接していない
+      return canPlace(b, 0, [[0,0]], 1, 1);
+    })());
+
+  assert('他プレイヤーが占有するセルには置けない',
+    !canPlace(b, 0, [[0,0]], 0, 19));
+}
+
+// --- placePiece ---
+section('placePiece (ピース配置)');
+{
+  const b = makeBoard();
+  placePiece(b, 0, [[0,0],[1,0],[1,1]], 0, 0);
+  assert('配置後 [0,0] がプレイヤー0', b[0][0] === 0);
+  assert('配置後 [1,0] がプレイヤー0', b[1][0] === 0);
+  assert('配置後 [1,1] がプレイヤー0', b[1][1] === 0);
+  assert('配置されてない [0,1] は空(-1)', b[0][1] === -1);
+}
+
+// --- getScore ---
+section('getScore (スコア計算)');
+{
+  // 全ピース未使用（合計89マス）
+  const PIECE_SHAPES = [
+    [[0,0]],
+    [[0,0],[1,0]],
+    [[0,0],[1,0],[2,0]],
+    [[0,0],[1,0],[1,1]],
+    [[0,0],[1,0],[2,0],[3,0]],
+    [[0,0],[1,0],[2,0],[2,1]],
+    [[0,0],[1,0],[2,0],[1,1]],
+    [[0,0],[1,0],[0,1],[1,1]],
+    [[0,0],[1,0],[1,1],[2,1]],
+    [[0,0],[1,0],[2,0],[3,0],[4,0]],
+    [[0,0],[1,0],[2,0],[3,0],[3,1]],
+    [[0,0],[1,0],[2,0],[3,0],[2,1]],
+    [[0,0],[1,0],[2,0],[3,0],[1,1]],
+    [[0,0],[1,0],[2,0],[2,1],[3,1]],
+    [[0,0],[1,0],[1,1],[2,1],[3,1]],
+    [[0,0],[1,0],[2,0],[0,1],[2,1]],
+    [[0,0],[1,0],[2,0],[1,1],[1,2]],
+    [[0,0],[1,0],[1,1],[2,1],[2,2]],
+    [[0,0],[1,0],[1,1],[1,2],[2,2]],
+    [[0,0],[1,0],[1,1],[2,1],[1,2]],
+    [[0,0],[0,1],[1,1],[2,1],[2,2]],
+  ];
+
+  const pp = [PIECE_SHAPES.map(s => ({ shape: s.map(c => [...c]), used: false }))];
+  assert('全ピース未使用 → -89点', getScore(pp, 0) === -89);
+
+  // 全ピース使用済み
+  const ppAll = [PIECE_SHAPES.map(s => ({ shape: s.map(c => [...c]), used: true }))];
+  assert('全ピース使用済み → +15点 (ボーナス)', getScore(ppAll, 0) === 15);
+
+  // 一部使用（1マスと2マスのみ使用、残り86マス未使用）
+  const ppPartial = [PIECE_SHAPES.map((s, i) => ({ shape: s.map(c => [...c]), used: i < 2 }))];
+  assert('1マス+2マスのみ使用 → -86点', getScore(ppPartial, 0) === -86);
+
+  // 最後の1ピース（1マス）だけ未使用
+  const ppAlmost = [PIECE_SHAPES.map((s, i) => ({ shape: s.map(c => [...c]), used: i > 0 }))];
+  assert('1マスピースだけ未使用 → -1点', getScore(ppAlmost, 0) === -1);
+}
+
+// --- 回転＋配置の統合テスト ---
+section('統合テスト: 回転後の配置');
+{
+  const b = makeBoard();
+  // L字ピースを回転させて配置
+  let shape = [[0,0],[1,0],[1,1]];
+  const rotated = normalize(rotateCW(shape));
+  assert('L字を回転して正規化すると2マス幅になる',
+    Math.max(...rotated.map(s => s[1])) === 1);
+
+  // コーナー配置
+  assert('回転後のL字がコーナーに配置できる',
+    canPlace(b, 0, rotated, 0, 0));
+}
+
+// --- 連続配置テスト ---
+section('統合テスト: 連続配置');
+{
+  const b = makeBoard();
+  // プレイヤー0: [0,0]に1マス配置
+  placePiece(b, 0, [[0,0]], 0, 0);
+  assert('1手目配置完了', b[0][0] === 0);
+
+  // プレイヤー0: [1,1]に角接触で配置
+  assert('2手目 [1,1] に配置可能', canPlace(b, 0, [[0,0]], 1, 1));
+  placePiece(b, 0, [[0,0]], 1, 1);
+  assert('2手目配置完了', b[1][1] === 0);
+
+  // プレイヤー0: [2,2]に角接触で配置
+  assert('3手目 [2,2] に配置可能', canPlace(b, 0, [[0,0]], 2, 2));
+
+  // [2,1]は辺接触なのでNG
+  assert('辺接触 [2,1] はNG', !canPlace(b, 0, [[0,0]], 2, 1));
+}
+
+// --- ピース数確認 ---
+section('ピース定義の検証');
+{
+  const PIECE_SHAPES = [
+    [[0,0]],
+    [[0,0],[1,0]],
+    [[0,0],[1,0],[2,0]],
+    [[0,0],[1,0],[1,1]],
+    [[0,0],[1,0],[2,0],[3,0]],
+    [[0,0],[1,0],[2,0],[2,1]],
+    [[0,0],[1,0],[2,0],[1,1]],
+    [[0,0],[1,0],[0,1],[1,1]],
+    [[0,0],[1,0],[1,1],[2,1]],
+    [[0,0],[1,0],[2,0],[3,0],[4,0]],
+    [[0,0],[1,0],[2,0],[3,0],[3,1]],
+    [[0,0],[1,0],[2,0],[3,0],[2,1]],
+    [[0,0],[1,0],[2,0],[3,0],[1,1]],
+    [[0,0],[1,0],[2,0],[2,1],[3,1]],
+    [[0,0],[1,0],[1,1],[2,1],[3,1]],
+    [[0,0],[1,0],[2,0],[0,1],[2,1]],
+    [[0,0],[1,0],[2,0],[1,1],[1,2]],
+    [[0,0],[1,0],[1,1],[2,1],[2,2]],
+    [[0,0],[1,0],[1,1],[1,2],[2,2]],
+    [[0,0],[1,0],[1,1],[2,1],[1,2]],
+    [[0,0],[0,1],[1,1],[2,1],[2,2]],
+  ];
+  assert('ピース数は21個', PIECE_SHAPES.length === 21);
+  assert('1マスピースは1個', PIECE_SHAPES.filter(s => s.length === 1).length === 1);
+  assert('2マスピースは1個', PIECE_SHAPES.filter(s => s.length === 2).length === 1);
+  assert('3マスピースは2個', PIECE_SHAPES.filter(s => s.length === 3).length === 2);
+  assert('4マスピースは5個', PIECE_SHAPES.filter(s => s.length === 4).length === 5);
+  assert('5マスピースは12個', PIECE_SHAPES.filter(s => s.length === 5).length === 12);
+  const totalCells = PIECE_SHAPES.reduce((sum, s) => sum + s.length, 0);
+  assert('全ピースの合計マス数は89', totalCells === 89);
+}
+
+// ===== 結果サマリー =====
+const summaryEl = document.getElementById('summary');
+summaryEl.textContent = `合計: ${totalPass + totalFail}件 / PASS: ${totalPass}件 / FAIL: ${totalFail}件`;
+summaryEl.className = totalFail === 0 ? 'all-pass' : 'has-fail';
+</script>
+</body>
+</html>
