@@ -110,9 +110,9 @@ canvas#board { display: block; }
 const BOARD_SIZE = 20;
 const PLAYERS = [
   { id: 0, name: 'あなた', color: '#e63946', light: '#ff6b6b' },
-  { id: 1, name: 'CPU 1', color: '#457b9d', light: '#6bb5e9' },
-  { id: 2, name: 'CPU 2', color: '#2a9d8f', light: '#5dd9cb' },
-  { id: 3, name: 'CPU 3', color: '#e9c46a', light: '#fff3a0' }
+  { id: 1, name: 'CPU1🔥', color: '#457b9d', light: '#6bb5e9' },
+  { id: 2, name: 'CPU2🛡️', color: '#2a9d8f', light: '#5dd9cb' },
+  { id: 3, name: 'CPU3🎲', color: '#e9c46a', light: '#fff3a0' }
 ];
 
 const PLAYERS_LOCAL = [
@@ -120,6 +120,45 @@ const PLAYERS_LOCAL = [
   { id: 1, name: 'P2', color: '#457b9d', light: '#6bb5e9' },
   { id: 2, name: 'P3', color: '#2a9d8f', light: '#5dd9cb' },
   { id: 3, name: 'P4', color: '#e9c46a', light: '#fff3a0' }
+];
+
+// CPU Personality System
+const CPU_PERSONALITIES = {
+  aggressive: {
+    name: 'アグレッシブ',
+    emoji: '🔥',
+    sizeWeight: 15,
+    cornerWeight: 2,
+    centerWeight: 3,
+    blockWeight: 0,
+    randomness: 1
+  },
+  defensive: {
+    name: 'ディフェンシブ',
+    emoji: '🛡️',
+    sizeWeight: 6,
+    cornerWeight: 5,
+    centerWeight: 1,
+    blockWeight: 8,
+    randomness: 1
+  },
+  trickster: {
+    name: 'トリックスター',
+    emoji: '🎲',
+    sizeWeight: 8,
+    cornerWeight: 3,
+    centerWeight: 2,
+    blockWeight: 3,
+    randomness: 8
+  }
+};
+
+// Assign personality to each CPU player (index matches player id)
+const CPU_PLAYER_PERSONALITY = [
+  null,          // Player 0 = human
+  'aggressive',  // CPU 1 = aggressive
+  'defensive',   // CPU 2 = defensive
+  'trickster'    // CPU 3 = trickster
 ];
 
 // All 21 Blokus pieces (relative coordinates)
@@ -408,16 +447,51 @@ function countNewCorners(player, shape, br, bc) {
   return count;
 }
 
+function countBlockedOpponentCorners(player, shape, br, bc) {
+  // Count how many opponent corner positions this placement blocks
+  let blocked = 0;
+  const placed = new Set(shape.map(([dr, dc]) => ));
+  for (let p = 0; p < 4; p++) {
+    if (p === player) continue;
+    const oppCorners = getCornerPositions(p);
+    for (const [cr, cc] of oppCorners) {
+      if (placed.has()) blocked++;
+      // Also count edge-adjacency blocking
+      for (const [dr, dc] of shape) {
+        const r = br + dr, c = bc + dc;
+        if ((Math.abs(r-cr) === 1 && c === cc) || (Math.abs(c-cc) === 1 && r === cr)) {
+          blocked++;
+          break;
+        }
+      }
+    }
+  }
+  return blocked;
+}
+
+function getCenterDistance(shape, br, bc) {
+  // Average distance of piece cells from board center
+  const center = BOARD_SIZE / 2;
+  let totalDist = 0;
+  for (const [dr, dc] of shape) {
+    const r = br + dr, c = bc + dc;
+    totalDist += Math.abs(r - center) + Math.abs(c - center);
+  }
+  return totalDist / shape.length;
+}
+
 function cpuMove(player) {
   const pieces = playerPieces[player];
   const cornerPositions = getCornerPositions(player);
   if (cornerPositions.length === 0 && !isFirstMove(player)) return null;
 
+  const personalityKey = CPU_PLAYER_PERSONALITY[player] || 'aggressive';
+  const p = CPU_PERSONALITIES[personalityKey];
+
   let bestMove = null;
   let bestScore = -Infinity;
 
-  // Sort pieces by size (largest first) for better play
-  const pieceIndices = pieces.map((p, i) => i).filter(i => !pieces[i].used);
+  const pieceIndices = pieces.map((_, i) => i).filter(i => !pieces[i].used);
   pieceIndices.sort((a, b) => pieces[b].shape.length - pieces[a].shape.length);
 
   for (const idx of pieceIndices) {
@@ -425,16 +499,23 @@ function cpuMove(player) {
 
     for (const orient of orientations) {
       for (const [cr, cc] of cornerPositions) {
-        // Try placing each cell of the piece on each corner position
         for (const [dr, dc] of orient) {
           const br = cr - dr;
           const bc = cc - dc;
           if (canPlace(player, orient, br, bc)) {
             const size = orient.length;
             const newCorners = countNewCorners(player, orient, br, bc);
-            // Score: prioritize large pieces and creating more corners
-            // Add slight randomness for variety
-            const score = size * 10 + newCorners * 3 + Math.random() * 2;
+            const blocked = countBlockedOpponentCorners(player, orient, br, bc);
+            const centerDist = getCenterDistance(orient, br, bc);
+            const centerScore = (BOARD_SIZE - centerDist);
+
+            const score =
+              size * p.sizeWeight +
+              newCorners * p.cornerWeight +
+              centerScore * p.centerWeight +
+              blocked * p.blockWeight +
+              Math.random() * p.randomness;
+
             if (score > bestScore) {
               bestScore = score;
               bestMove = { idx, shape: orient, r: br, c: bc };
