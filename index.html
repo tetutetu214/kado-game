@@ -450,12 +450,12 @@ function countNewCorners(player, shape, br, bc) {
 function countBlockedOpponentCorners(player, shape, br, bc) {
   // Count how many opponent corner positions this placement blocks
   let blocked = 0;
-  const placed = new Set(shape.map(([dr, dc]) => ));
+  const placed = new Set(shape.map(([dr, dc]) => `${br+dr},${bc+dc}`));
   for (let p = 0; p < 4; p++) {
     if (p === player) continue;
     const oppCorners = getCornerPositions(p);
     for (const [cr, cc] of oppCorners) {
-      if (placed.has()) blocked++;
+      if (placed.has(`${cr},${cc}`)) blocked++;
       // Also count edge-adjacency blocking
       for (const [dr, dc] of shape) {
         const r = br + dr, c = bc + dc;
