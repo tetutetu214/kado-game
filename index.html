@@ -79,6 +79,16 @@ canvas#board { display: block; touch-action: none; }
 #rules-modal ul { padding-left: 18px; margin: 4px 0; }
 #rules-modal .rules-close { display: block; margin: 16px auto 0; background: #e94560; border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 16px; cursor: pointer; }
 .rules-link { font-size: 14px; color: #6bb5e9; cursor: pointer; margin-top: 4px; background: none; border: none; text-decoration: underline; }
+.stats-link { font-size: 14px; color: #6bb5e9; cursor: pointer; margin-top: 0; background: none; border: none; text-decoration: underline; }
+#stats-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+#stats-overlay.show { display: flex; }
+#stats-modal { background: #16213e; border-radius: 16px; padding: 20px; max-width: 340px; width: 90%; text-align: center; }
+#stats-modal h2 { font-size: 20px; margin-bottom: 16px; }
+#stats-modal .stat-row { display: flex; justify-content: space-between; padding: 6px 12px; font-size: 15px; color: #ccc; }
+#stats-modal .stat-row .label { color: #aaa; }
+#stats-modal .stat-row .value { color: #fff; font-weight: bold; }
+#stats-modal .stats-close { display: block; margin: 16px auto 0; background: #e94560; border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+#stats-modal .stats-reset { display: block; margin: 8px auto 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; }
 .feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
 #order-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
 #order-select h2 { font-size: 18px; margin-bottom: 4px; }
@@ -124,6 +134,7 @@ canvas#board { display: block; touch-action: none; }
     <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideOrderSelect()">戻る</button>
   </div>
   <button class="rules-link" onclick="showRules()">遊び方を見る</button>
+  <button class="stats-link" onclick="showStats()">戦績を見る</button>
   <a class="feedback-link" href="https://github.com/tetutetu214/blokus-game/issues" target="_blank">バグ報告・要望はこちら</a>
 </div>
 
@@ -1133,6 +1144,7 @@ function endGame() {
   });
   body.appendChild(div);
   document.getElementById('modal-overlay').classList.add('show');
+  recordGameResult();
 }
 
 // ===== Save / Load =====
@@ -1333,6 +1345,74 @@ function initGame() {
   }
 }
 
+function loadStats() {
+  try {
+    const json = localStorage.getItem('blokus_stats');
+    if (!json) return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0 };
+    return JSON.parse(json);
+  } catch(e) {
+    return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0 };
+  }
+}
+
+function saveStats(stats) {
+  try {
+    localStorage.setItem('blokus_stats', JSON.stringify(stats));
+  } catch(e) {
+    console.warn('Stats save failed:', e);
+  }
+}
+
+function recordGameResult() {
+  if (gameMode !== 'cpu') return;
+  const stats = loadStats();
+  stats.games++;
+  const scores = players.map((_, i) => getScore(i));
+  const myScore = scores[humanPlayer];
+  const sorted = [...scores].sort((a, b) => b - a);
+  const rank = sorted.indexOf(myScore);
+  if (rank >= 0 && rank < 4) stats.ranks[rank]++;
+  if (rank === 0) stats.wins++;
+  if (stats.bestScore === null || myScore > stats.bestScore) stats.bestScore = myScore;
+  stats.totalScore += myScore;
+  saveStats(stats);
+}
+
+function showStats() {
+  const stats = loadStats();
+  const body = document.getElementById('stats-body');
+  body.innerHTML = '';
+  const rows = [
+    ['対戦数', stats.games + '回'],
+    ['勝利数', stats.wins + '回'],
+    ['勝率', stats.games > 0 ? Math.round(stats.wins / stats.games * 100) + '%' : '-'],
+    ['1位', stats.ranks[0] + '回'],
+    ['2位', stats.ranks[1] + '回'],
+    ['3位', stats.ranks[2] + '回'],
+    ['4位', stats.ranks[3] + '回'],
+    ['最高スコア', stats.bestScore !== null ? stats.bestScore + '点' : '-'],
+    ['平均スコア', stats.games > 0 ? Math.round(stats.totalScore / stats.games) + '点' : '-'],
+  ];
+  rows.forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = '<span class="label">' + label + '</span><span class="value">' + value + '</span>';
+    body.appendChild(row);
+  });
+  document.getElementById('stats-overlay').classList.add('show');
+}
+
+function hideStats() {
+  document.getElementById('stats-overlay').classList.remove('show');
+}
+
+function resetStats() {
+  if (confirm('戦績をリセットしますか？')) {
+    localStorage.removeItem('blokus_stats');
+    showStats();
+  }
+}
+
 function showRules() {
   document.getElementById('rules-overlay').classList.add('show');
 }
@@ -1370,6 +1450,15 @@ window.addEventListener('orientationchange', () => {
   }, 100);
 });
 </script>
+<div id="stats-overlay" onclick="hideStats()">
+  <div id="stats-modal" onclick="event.stopPropagation()">
+    <h2>戦績</h2>
+    <div id="stats-body"></div>
+    <button class="stats-close" onclick="hideStats()">閉じる</button>
+    <button class="stats-reset" onclick="resetStats()">戦績をリセット</button>
+  </div>
+</div>
+
 <div id="rules-overlay" onclick="hideRules()">
   <div id="rules-modal" onclick="event.stopPropagation()">
     <h2>遊び方</h2>
