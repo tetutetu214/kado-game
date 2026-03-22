@@ -636,24 +636,7 @@ function executeCpuTurn() {
       return;
     }
 
-    currentPlayer = (currentPlayer + 1) % 4;
-
-    // Skip passed players
-    let skipped = 0;
-    while (playerPassed[currentPlayer] && skipped < 4) {
-      currentPlayer = (currentPlayer + 1) % 4;
-      skipped++;
-    }
-    if (skipped >= 4) { endGame(); return; }
-
-    updateTurnIndicator();
-    updatePieceList();
-    drawBoard();
-
-    // If next player is also CPU, chain the turn
-    if (isCpuPlayer(currentPlayer) && !gameOver) {
-      setTimeout(executeCpuTurn, 400);
-    }
+    nextTurn();
   }, 300);
 }
 
