@@ -853,8 +853,19 @@ function undoMove() {
   saveGame();
 }
 
+function debugLog(msg) {
+  let d = document.getElementById('debug-log');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = 'debug-log';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;max-height:120px;overflow-y:auto;font-family:monospace;white-space:pre-wrap;';
+    document.body.appendChild(d);
+  }
+  d.textContent = msg + '\n' + d.textContent;
+}
+
 function handleBoardTap(pos) {
-  console.log('handleBoardTap', {pos, currentShape: !!currentShape, selectedPieceIdx, currentPlayer, cellSize});
+  debugLog('tap pos=(' + pos.r + ',' + pos.c + ') shape=' + (!!currentShape) + ' idx=' + selectedPieceIdx + ' cell=' + cellSize);
   if (!currentShape || selectedPieceIdx === null) {
     ghostPos = null;
     drawBoard();
@@ -865,7 +876,8 @@ function handleBoardTap(pos) {
   const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
   const br = pos.r - midR;
   const bc = pos.c - midC;
-  console.log('trying place', {br, bc, midR, midC, shape: currentShape});
+  const result = canPlace(currentPlayer, currentShape, br, bc);
+  debugLog('place br=' + br + ' bc=' + bc + ' mid=(' + midR + ',' + midC + ') canPlace=' + result);
 
   if (canPlace(currentPlayer, currentShape, br, bc)) {
     // Save undo snapshot before placing
