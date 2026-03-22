@@ -673,7 +673,9 @@ function updatePieceList() {
   const list = document.getElementById('piece-list');
   list.innerHTML = '';
   const pieces = playerPieces[currentPlayer];
-  pieces.forEach((p, idx) => {
+  const sortedIndices = pieces.map((_, i) => i).sort((a, b) => pieces[b].shape.length - pieces[a].shape.length);
+  sortedIndices.forEach((idx) => {
+    const p = pieces[idx];
     const div = document.createElement('div');
     div.className = 'piece-item' + (idx === selectedPieceIdx ? ' selected' : '') + (p.used ? ' used' : '');
 
@@ -1047,8 +1049,9 @@ function showPlayerPieces(playerIdx) {
   const list = document.getElementById('piece-list');
   list.innerHTML = '';
   const pieces = playerPieces[playerIdx];
-  pieces.forEach((p, idx) => {
-    if (p.used) return; // Only show remaining pieces
+  const sortedIndices = pieces.map((_, i) => i).filter(i => !pieces[i].used).sort((a, b) => pieces[b].shape.length - pieces[a].shape.length);
+  sortedIndices.forEach((idx) => {
+    const p = pieces[idx];
     const div = document.createElement('div');
     div.className = 'piece-item';
     const shape = p.shape;
