@@ -1348,10 +1348,12 @@ function initGame() {
 function loadStats() {
   try {
     const json = localStorage.getItem('blokus_stats');
-    if (!json) return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0 };
-    return JSON.parse(json);
+    if (!json) return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [] };
+    const stats = JSON.parse(json);
+    if (!stats.history) stats.history = [];
+    return stats;
   } catch(e) {
-    return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0 };
+    return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [] };
   }
 }
 
@@ -1375,6 +1377,8 @@ function recordGameResult() {
   if (rank === 0) stats.wins++;
   if (stats.bestScore === null || myScore > stats.bestScore) stats.bestScore = myScore;
   stats.totalScore += myScore;
+  stats.history.push({ score: myScore, rank: rank + 1 });
+  if (stats.history.length > 10) stats.history = stats.history.slice(-10);
   saveStats(stats);
 }
 
@@ -1399,6 +1403,66 @@ function showStats() {
     row.innerHTML = '<span class="label">' + label + '</span><span class="value">' + value + '</span>';
     body.appendChild(row);
   });
+  if (stats.history.length > 0) {
+    const title = document.createElement('div');
+    title.style.cssText = 'margin-top:16px;font-size:14px;color:#aaa;text-align:center;';
+    title.textContent = '\u76f4\u8fd110\u56de\u306e\u30b9\u30b3\u30a2';
+    body.appendChild(title);
+    const cvs = document.createElement('canvas');
+    const w = 300, h = 140;
+    cvs.width = w; cvs.height = h;
+    cvs.style.cssText = 'width:100%;max-width:300px;margin:8px auto;display:block;';
+    body.appendChild(cvs);
+    const ctx = cvs.getContext('2d');
+    const hist = stats.history;
+    const scores = hist.map(h => h.score);
+    const maxS = Math.max(...scores, 0);
+    const minS = Math.min(...scores, 0);
+    const range = Math.max(maxS - minS, 1);
+    const padL = 35, padR = 10, padT = 10, padB = 25;
+    const chartW = w - padL - padR;
+    const chartH = h - padT - padB;
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
+    ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(maxS, padL - 4, padT + 10);
+    ctx.fillText(minS, padL - 4, h - padB);
+    if (minS < 0 && maxS > 0) {
+      const zeroY = padT + chartH * (1 - (0 - minS) / range);
+      ctx.strokeStyle = '#555'; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(w - padR, zeroY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText('0', padL - 4, zeroY + 3);
+    }
+    const barW = Math.max(Math.floor(chartW / 10) - 4, 8);
+    const gap = chartW / Math.max(hist.length, 1);
+    hist.forEach((entry, i) => {
+      const x = padL + gap * i + (gap - barW) / 2;
+      const val = entry.score;
+      let barH, y;
+      if (minS >= 0) {
+        barH = (val - minS) / range * chartH;
+        y = padT + chartH - barH;
+      } else {
+        const zeroY = padT + chartH * (1 - (0 - minS) / range);
+        if (val >= 0) {
+          barH = val / range * chartH;
+          y = zeroY - barH;
+        } else {
+          barH = Math.abs(val) / range * chartH;
+          y = zeroY;
+        }
+      }
+      ctx.fillStyle = entry.rank === 1 ? '#e9c46a' : entry.rank === 2 ? '#6bb5e9' : '#e94560';
+      ctx.fillRect(x, y, barW, Math.max(barH, 1));
+      ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(val, x + barW / 2, val >= 0 ? y - 3 : y + barH + 10);
+    });
+    const legend = document.createElement('div');
+    legend.style.cssText = 'display:flex;justify-content:center;gap:12px;font-size:11px;color:#aaa;margin-top:4px;';
+    legend.innerHTML = '<span><span style="color:#e9c46a">\u25a0</span> 1\u4f4d</span><span><span style="color:#6bb5e9">\u25a0</span> 2\u4f4d</span><span><span style="color:#e94560">\u25a0</span> 3-4\u4f4d</span>';
+    body.appendChild(legend);
+  }
   document.getElementById('stats-overlay').classList.add('show');
 }
 
