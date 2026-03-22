@@ -55,6 +55,7 @@ canvas#board { display: block; touch-action: none; }
 
 /* Pass button */
 #pass-btn { background: #e94560; border: none; color: #fff; padding: 4px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; width: auto; height: auto; }
+#deselect-btn { background: #e94560; border: none; color: #fff; padding: 4px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; width: auto; height: auto; display: none; }
 #undo-btn { background: #555; border: none; color: #fff; padding: 4px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; width: auto; height: auto; }
 #undo-btn:disabled { opacity: 0.3; cursor: default; }
 
@@ -133,6 +134,7 @@ canvas#board { display: block; touch-action: none; }
     <div id="piece-controls">
       <button onclick="rotatePiece()">↻</button>
       <button onclick="flipPiece()">↔</button>
+      <button id="deselect-btn" onclick="deselectPiece()">×</button>
       <button id="undo-btn" onclick="undoMove()" disabled>戻す</button>
       <button id="pass-btn" onclick="passTurn()">パス</button>
     </div>
@@ -683,6 +685,16 @@ function updatePieceList() {
   });
 }
 
+function deselectPiece() {
+  selectedPieceIdx = null;
+  currentShape = null;
+  ghostPos = null;
+  hoverPos = null;
+  document.getElementById('deselect-btn').style.display = 'none';
+  drawBoard();
+  updatePieceList();
+}
+
 function selectPiece(idx) {
   if (cpuThinking) return;
   if (isCpuPlayer(currentPlayer)) return;
@@ -695,6 +707,7 @@ function selectPiece(idx) {
   }
   ghostPos = null;
   hoverPos = null;
+  document.getElementById('deselect-btn').style.display = selectedPieceIdx !== null ? 'inline-block' : 'none';
   drawBoard();
   updatePieceList();
 }
@@ -768,7 +781,7 @@ canvas.addEventListener('touchend', (e) => {
       saveGame();
       nextTurn();
     } else {
-      drawBoard();
+      deselectPiece();
     }
   }
 }, { passive: false });
@@ -838,8 +851,8 @@ function handleBoardTap(pos) {
 
     nextTurn();
   } else {
-    ghostPos = { r: br, c: bc };
-    drawBoard();
+    // Deselect piece on invalid placement
+    deselectPiece();
   }
 }
 
