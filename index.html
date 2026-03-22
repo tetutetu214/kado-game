@@ -713,7 +713,6 @@ function updatePieceList() {
 }
 
 function deselectPiece() {
-  debugLog('deselectPiece called from: ' + new Error().stack.split('\n')[1]);
   selectedPieceIdx = null;
   currentShape = null;
   ghostPos = null;
@@ -724,7 +723,6 @@ function deselectPiece() {
 }
 
 function selectPiece(idx) {
-  debugLog('selectPiece idx=' + idx + ' prev=' + selectedPieceIdx);
   if (cpuThinking) return;
   if (isCpuPlayer(currentPlayer)) return;
   if (selectedPieceIdx === idx) {
@@ -773,13 +771,8 @@ canvas.addEventListener('click', (e) => {
   handleBoardTap(pos);
 });
 
-document.addEventListener('touchstart', (e) => {
-  debugLog('doc touch: ' + e.target.tagName + '#' + (e.target.id || '') + '.' + (e.target.className || ''));
-}, { passive: true });
-
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
-  debugLog('touchstart fired');
   if (gameOver || cpuThinking) return;
   if (isCpuPlayer(currentPlayer)) return;
   const touch = e.touches[0];
@@ -815,7 +808,8 @@ canvas.addEventListener('touchend', (e) => {
       saveGame();
       nextTurn();
     } else {
-      deselectPiece();
+      ghostPos = null;
+      drawBoard();
     }
   }
 }, { passive: false });
@@ -860,19 +854,7 @@ function undoMove() {
   saveGame();
 }
 
-function debugLog(msg) {
-  let d = document.getElementById('debug-log');
-  if (!d) {
-    d = document.createElement('div');
-    d.id = 'debug-log';
-    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;max-height:120px;overflow-y:auto;font-family:monospace;white-space:pre-wrap;';
-    document.body.appendChild(d);
-  }
-  d.textContent = msg + '\n' + d.textContent;
-}
-
 function handleBoardTap(pos) {
-  debugLog('tap pos=(' + pos.r + ',' + pos.c + ') shape=' + (!!currentShape) + ' idx=' + selectedPieceIdx + ' cell=' + cellSize);
   if (!currentShape || selectedPieceIdx === null) {
     ghostPos = null;
     drawBoard();
@@ -883,38 +865,6 @@ function handleBoardTap(pos) {
   const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
   const br = pos.r - midR;
   const bc = pos.c - midC;
-  const result = canPlace(currentPlayer, currentShape, br, bc);
-  // Debug: why canPlace failed
-  if (!result) {
-    const cells = currentShape.map(([dr, dc]) => [br + dr, bc + dc]);
-    let reason = '';
-    for (const [r, c] of cells) {
-      if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) { reason = 'OOB(' + r + ',' + c + ')'; break; }
-      if (board[r][c] >= 0) { reason = 'occupied(' + r + ',' + c + ')=' + board[r][c]; break; }
-    }
-    if (!reason) {
-      for (const [r, c] of cells) {
-        const adj = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
-        for (const [ar, ac] of adj) {
-          if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE && board[ar][ac] === currentPlayer) {
-            reason = 'edge(' + r + ',' + c + ')adj(' + ar + ',' + ac + ')'; break;
-          }
-        }
-        if (reason) break;
-      }
-    }
-    if (!reason) {
-      if (isFirstMove(currentPlayer)) {
-        const [sr, sc] = getStartCorner(currentPlayer);
-        reason = 'firstMove corner=(' + sr + ',' + sc + ') cells=' + JSON.stringify(cells);
-      } else {
-        reason = 'noDiag';
-      }
-    }
-    debugLog('FAIL reason=' + reason + ' player=' + currentPlayer + ' humanP=' + humanPlayer);
-  }
-  debugLog('place br=' + br + ' bc=' + bc + ' mid=(' + midR + ',' + midC + ') canPlace=' + result);
-
   if (canPlace(currentPlayer, currentShape, br, bc)) {
     // Save undo snapshot before placing
     saveUndoState(selectedPieceIdx);
@@ -927,10 +877,8 @@ function handleBoardTap(pos) {
     saveGame();
 
     nextTurn();
-  } else {
-    // Deselect piece on invalid placement
-    deselectPiece();
   }
+  // Do NOT deselect on invalid placement - keep piece selected so user can try again
 }
 
 // ===== Auto Pass =====
