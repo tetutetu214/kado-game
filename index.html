@@ -63,6 +63,10 @@ canvas#board { display: block; touch-action: none; }
 <div id="start-screen">
   <h1>ブロックス</h1>
   <p>ボードゲームの定番をiPhoneで</p>
+  <button id="continue-btn" class="start-btn" style="display:none; background:#2a9d8f;" onclick="resumeGame()">
+    つづきから
+    <span class="sub">前回の続きを再開</span>
+  </button>
   <button class="start-btn" onclick="startGame('cpu')">
     1人 vs CPU×3
     <span class="sub">コンピュータと対戦</span>
@@ -549,6 +553,7 @@ function executeCpuTurn() {
 
     cpuThinking = false;
     document.getElementById('cpu-thinking').style.display = 'none';
+    saveGame();
 
     if (passCount >= 4 || checkAllPassed()) {
       endGame();
@@ -707,6 +712,7 @@ function handleBoardTap(pos) {
     currentShape = null;
     ghostPos = null;
     passCount = 0;
+    saveGame();
 
     nextTurn();
   } else {
@@ -748,6 +754,7 @@ function passTurn() {
   selectedPieceIdx = null;
   currentShape = null;
   ghostPos = null;
+  saveGame();
   if (passCount >= 4 || checkAllPassed()) {
     endGame();
   } else {
@@ -826,8 +833,102 @@ function endGame() {
   document.getElementById('modal-overlay').classList.add('show');
 }
 
+// ===== Save / Load =====
+function saveGame() {
+  try {
+    const saveData = {
+      board: board,
+      currentPlayer: currentPlayer,
+      passCount: passCount,
+      gameOver: gameOver,
+      playerPassed: playerPassed,
+      gameMode: gameMode,
+      pieceUsed: playerPieces.map(pp => pp.map(p => p.used)),
+      timestamp: Date.now()
+    };
+    localStorage.setItem('blokus_save', JSON.stringify(saveData));
+  } catch(e) {
+    console.warn('Save failed:', e);
+  }
+}
+
+function loadGame() {
+  try {
+    const json = localStorage.getItem('blokus_save');
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch(e) {
+    return null;
+  }
+}
+
+function deleteSave() {
+  localStorage.removeItem('blokus_save');
+  updateContinueButton();
+}
+
+function resumeGame() {
+  const save = loadGame();
+  if (!save) return;
+
+  gameMode = save.gameMode;
+  players = gameMode === 'cpu' ? PLAYERS : PLAYERS_LOCAL;
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  // Restore state
+  board = save.board;
+  currentPlayer = save.currentPlayer;
+  passCount = save.passCount;
+  gameOver = save.gameOver;
+  playerPassed = save.playerPassed;
+  selectedPieceIdx = null;
+  currentShape = null;
+  ghostPos = null;
+  cpuThinking = false;
+
+  // Restore pieces
+  playerPieces = [];
+  for (let p = 0; p < 4; p++) {
+    playerPieces.push(
+      PIECE_SHAPES.map((shape, idx) => ({
+        shape: shape.map(s => [...s]),
+        used: save.pieceUsed[p][idx]
+      }))
+    );
+  }
+
+  updateTurnIndicator();
+  resizeBoard();
+  updatePieceList();
+
+  // If it's CPU's turn, auto-play
+  if (isCpuPlayer(currentPlayer) && !gameOver) {
+    setTimeout(executeCpuTurn, 500);
+  }
+}
+
+function updateContinueButton() {
+  const btn = document.getElementById('continue-btn');
+  const save = loadGame();
+  if (save && !save.gameOver) {
+    const date = new Date(save.timestamp);
+    const timeStr = date.toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const modeStr = save.gameMode === 'cpu' ? 'vs CPU' : '4人対戦';
+    btn.querySelector('.sub').textContent = modeStr + ' - ' + timeStr;
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// Show continue button on load
+document.addEventListener('DOMContentLoaded', updateContinueButton);
+
 // ===== Start / Init =====
 function startGame(mode) {
+  deleteSave(); // Clear old save when starting new game
   gameMode = mode;
   players = mode === 'cpu' ? PLAYERS : PLAYERS_LOCAL;
 
@@ -865,6 +966,7 @@ function initGame() {
 
 function backToTitle() {
   closeModal();
+  deleteSave();
   document.getElementById('app').style.display = 'none';
   document.getElementById('start-screen').style.display = 'flex';
 }
