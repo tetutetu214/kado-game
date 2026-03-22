@@ -64,6 +64,8 @@ canvas#board { display: block; touch-action: none; }
 .start-btn:active { background: #e94560; }
 .start-btn .sub { font-size: 12px; color: #aaa; display: block; margin-top: 4px; }
 #main-menu { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.feedback-link { font-size: 12px; color: #888; text-decoration: none; margin-top: 8px; }
+.feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
 #order-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
 #order-select h2 { font-size: 18px; margin-bottom: 4px; }
 #order-select p { font-size: 13px; color: #aaa; }
@@ -107,6 +109,7 @@ canvas#board { display: block; touch-action: none; }
     <button class="order-btn" onclick="startCpuGame(3)">4番手<span class="corner-label">左下コーナー</span></button>
     <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideOrderSelect()">戻る</button>
   </div>
+  <a class="feedback-link" href="https://github.com/tetutetu214/blokus-game/issues" target="_blank">バグ報告・要望はこちら</a>
 </div>
 
 <!-- Game Screen -->
