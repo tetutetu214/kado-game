@@ -755,14 +755,28 @@ canvas.addEventListener('touchmove', (e) => {
   if (isCpuPlayer(currentPlayer)) return;
   const touch = e.touches[0];
   const pos = getBoardCell(touch.clientX, touch.clientY);
-  ghostPos = { r: pos.r - 2, c: pos.c - Math.floor(Math.max(...currentShape.map(s=>s[1])) / 2) };
+  const midR = Math.floor(Math.max(...currentShape.map(s => s[0])) / 2);
+  const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
+  ghostPos = { r: pos.r - midR, c: pos.c - midC };
   drawBoard();
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
   e.preventDefault();
-  if (ghostPos && currentShape && !cpuThinking && !isCpuPlayer(currentPlayer)) {
-    handleBoardTap(ghostPos);
+  if (ghostPos && currentShape && !cpuThinking && !isCpuPlayer(currentPlayer) && selectedPieceIdx !== null) {
+    // ghostPos is already centered, so place directly without re-centering
+    if (canPlace(currentPlayer, currentShape, ghostPos.r, ghostPos.c)) {
+      placePiece(currentPlayer, currentShape, ghostPos.r, ghostPos.c);
+      playerPieces[currentPlayer][selectedPieceIdx].used = true;
+      selectedPieceIdx = null;
+      currentShape = null;
+      ghostPos = null;
+      passCount = 0;
+      saveGame();
+      nextTurn();
+    } else {
+      drawBoard();
+    }
   }
 }, { passive: false });
 
