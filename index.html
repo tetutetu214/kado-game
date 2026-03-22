@@ -24,6 +24,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
 .stat-item .stat-name { opacity: 0.7; }
 .stat-item .stat-value { font-weight: bold; font-size: 13px; }
 .stat-item.active { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 1px 6px; }
+.stat-item { cursor: pointer; border-radius: 6px; padding: 1px 6px; }
+.stat-item.viewing { outline: 2px solid #fff; outline-offset: -1px; }
+#viewing-label { display: none; text-align: center; font-size: 12px; padding: 2px 0; background: #1a1a3e; color: #aaa; }
+#viewing-label span { font-weight: bold; }
 
 /* Board area */
 #board-container { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; min-height: 0; }
@@ -125,6 +129,7 @@ canvas#board { display: block; touch-action: none; }
       <button onclick="flipPiece()">↔</button>
       <button id="pass-btn" onclick="passTurn()">パス</button>
     </div>
+    <div id="viewing-label">← <span></span>のピースを表示中（タップで戻る）</div>
     <div id="piece-list"></div>
   </div>
 </div>
@@ -239,6 +244,7 @@ let gameMode = 'cpu'; // 'cpu' or 'local'
 let players = PLAYERS;
 let cpuThinking = false;
 let humanPlayer = 0; // Which player index is human
+let viewingPlayer = null; // Which player's pieces are being viewed (null = own)
 let hoverPos = null;
 let lastPlacedCells = []; // [[r,c], ...] for highlight
 
@@ -889,6 +895,9 @@ function updateTurnIndicator() {
   const p = players[currentPlayer];
   el.textContent = '● ' + p.name;
   el.style.background = p.color;
+  // Clear viewing mode on turn change
+  viewingPlayer = null;
+  document.getElementById('viewing-label').style.display = 'none';
   updateStatsBar();
 }
 
@@ -901,7 +910,7 @@ function updateStatsBar() {
     const remaining = pieces.filter(p => !p.used).length;
     const remainingSquares = pieces.filter(p => !p.used).reduce((sum, p) => sum + p.shape.length, 0);
     const div = document.createElement('div');
-    div.className = 'stat-item' + (i === currentPlayer ? ' active' : '');
+    div.className = 'stat-item' + (i === currentPlayer ? ' active' : '') + (viewingPlayer === i ? ' viewing' : '');
     const nameSpan = document.createElement('div');
     nameSpan.className = 'stat-name';
     nameSpan.style.color = players[i].color;
@@ -911,8 +920,51 @@ function updateStatsBar() {
     valueSpan.textContent = remaining + 'ピース / ' + remainingSquares + 'マス';
     div.appendChild(nameSpan);
     div.appendChild(valueSpan);
+    div.onclick = () => toggleViewPlayer(i);
     bar.appendChild(div);
   }
+}
+
+function toggleViewPlayer(playerIdx) {
+  if (viewingPlayer === playerIdx || playerIdx === currentPlayer) {
+    // Tap again or tap current player = back to own pieces
+    viewingPlayer = null;
+    document.getElementById('viewing-label').style.display = 'none';
+    updatePieceList();
+  } else {
+    viewingPlayer = playerIdx;
+    const label = document.getElementById('viewing-label');
+    label.querySelector('span').textContent = players[playerIdx].name;
+    label.querySelector('span').style.color = players[playerIdx].color;
+    label.style.display = 'block';
+    showPlayerPieces(playerIdx);
+  }
+  updateStatsBar();
+}
+
+function showPlayerPieces(playerIdx) {
+  const list = document.getElementById('piece-list');
+  list.innerHTML = '';
+  const pieces = playerPieces[playerIdx];
+  pieces.forEach((p, idx) => {
+    if (p.used) return; // Only show remaining pieces
+    const div = document.createElement('div');
+    div.className = 'piece-item';
+    const shape = p.shape;
+    const maxR = Math.max(...shape.map(s => s[0])) + 1;
+    const maxC = Math.max(...shape.map(s => s[1])) + 1;
+    const cs = Math.min(20, Math.floor(60 / Math.max(maxR, maxC)));
+    const cvs = document.createElement('canvas');
+    cvs.width = maxC * cs + 2;
+    cvs.height = maxR * cs + 2;
+    const cx = cvs.getContext('2d');
+    shape.forEach(([r, c]) => {
+      cx.fillStyle = players[playerIdx].color;
+      cx.fillRect(c * cs + 1, r * cs + 1, cs - 1, cs - 1);
+    });
+    div.appendChild(cvs);
+    list.appendChild(div);
+  });
 }
 
 // ===== Scoring =====
