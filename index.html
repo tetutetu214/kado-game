@@ -1406,7 +1406,7 @@ function showStats() {
   if (stats.history.length > 0) {
     const title = document.createElement('div');
     title.style.cssText = 'margin-top:16px;font-size:14px;color:#aaa;text-align:center;';
-    title.textContent = '\u76f4\u8fd110\u56de\u306e\u30b9\u30b3\u30a2';
+    title.textContent = '\u76f4\u8fd110\u56de\u306e\u9806\u4f4d\u63a8\u79fb';
     body.appendChild(title);
     const cvs = document.createElement('canvas');
     const w = 300, h = 140;
@@ -1415,53 +1415,40 @@ function showStats() {
     body.appendChild(cvs);
     const ctx = cvs.getContext('2d');
     const hist = stats.history;
-    const scores = hist.map(h => h.score);
-    const maxS = Math.max(...scores, 0);
-    const minS = Math.min(...scores, 0);
-    const range = Math.max(maxS - minS, 1);
-    const padL = 35, padR = 10, padT = 10, padB = 25;
+    const padL = 30, padR = 15, padT = 15, padB = 25;
     const chartW = w - padL - padR;
     const chartH = h - padT - padB;
+    // Y axis: rank 1(top) to 4(bottom)
     ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
-    ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(maxS, padL - 4, padT + 10);
-    ctx.fillText(minS, padL - 4, h - padB);
-    if (minS < 0 && maxS > 0) {
-      const zeroY = padT + chartH * (1 - (0 - minS) / range);
-      ctx.strokeStyle = '#555'; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(w - padR, zeroY); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillText('0', padL - 4, zeroY + 3);
+    for (let r = 1; r <= 4; r++) {
+      const y = padT + (r - 1) / 3 * chartH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+      ctx.fillStyle = '#666'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(r + '\u4f4d', padL - 4, y + 4);
     }
-    const barW = Math.max(Math.floor(chartW / 10) - 4, 8);
-    const gap = chartW / Math.max(hist.length, 1);
-    hist.forEach((entry, i) => {
-      const x = padL + gap * i + (gap - barW) / 2;
-      const val = entry.score;
-      let barH, y;
-      if (minS >= 0) {
-        barH = (val - minS) / range * chartH;
-        y = padT + chartH - barH;
-      } else {
-        const zeroY = padT + chartH * (1 - (0 - minS) / range);
-        if (val >= 0) {
-          barH = val / range * chartH;
-          y = zeroY - barH;
-        } else {
-          barH = Math.abs(val) / range * chartH;
-          y = zeroY;
-        }
-      }
-      ctx.fillStyle = entry.rank === 1 ? '#e9c46a' : entry.rank === 2 ? '#6bb5e9' : '#e94560';
-      ctx.fillRect(x, y, barW, Math.max(barH, 1));
-      ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(val, x + barW / 2, val >= 0 ? y - 3 : y + barH + 10);
+    // Plot points and lines
+    const points = hist.map((entry, i) => {
+      const x = hist.length === 1 ? padL + chartW / 2 : padL + (i / (hist.length - 1)) * chartW;
+      const y = padT + (entry.rank - 1) / 3 * chartH;
+      return { x, y, rank: entry.rank, score: entry.score };
     });
-    const legend = document.createElement('div');
-    legend.style.cssText = 'display:flex;justify-content:center;gap:12px;font-size:11px;color:#aaa;margin-top:4px;';
-    legend.innerHTML = '<span><span style="color:#e9c46a">\u25a0</span> 1\u4f4d</span><span><span style="color:#6bb5e9">\u25a0</span> 2\u4f4d</span><span><span style="color:#e94560">\u25a0</span> 3-4\u4f4d</span>';
-    body.appendChild(legend);
+    // Draw line
+    ctx.strokeStyle = '#6bb5e9'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+    // Draw points and labels
+    points.forEach((p) => {
+      ctx.fillStyle = p.rank === 1 ? '#e9c46a' : p.rank === 2 ? '#6bb5e9' : p.rank === 3 ? '#e94560' : '#e94560';
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(p.score + '\u70b9', p.x, p.y - 9);
+    });
+    // X axis labels
+    ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    points.forEach((p, i) => {
+      ctx.fillText(i + 1, p.x, h - padB + 14);
+    });
   }
   document.getElementById('stats-overlay').classList.add('show');
 }
