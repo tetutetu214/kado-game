@@ -292,6 +292,21 @@ function drawBoard() {
     }
   });
 
+  // Highlight placeable corners for current player (only when no piece selected or piece selected)
+  if (!gameOver && !cpuThinking && !isCpuPlayer(currentPlayer)) {
+    const cp = getCornerPositions(currentPlayer);
+    for (const [cr, cc] of cp) {
+      const dotX = cc * cellSize + cellSize / 2;
+      const dotY = cr * cellSize + cellSize / 2;
+      ctx.fillStyle = players[currentPlayer].light;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, cellSize * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
   // Ghost preview (ghostPos from touch/click, hoverPos from mouse hover)
   const previewPos = ghostPos || hoverPos;
   if (previewPos && currentShape) {
