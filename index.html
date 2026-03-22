@@ -55,6 +55,9 @@ canvas#board { display: block; touch-action: none; }
 
 /* CPU thinking indicator */
 #cpu-thinking { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 50; }
+#auto-pass-toast { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; padding: 14px 28px; border-radius: 14px; font-size: 15px; z-index: 60; text-align: center; animation: fadeInOut 2s ease-in-out; pointer-events: none; }
+#auto-pass-toast .pass-name { font-weight: bold; font-size: 17px; }
+@keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -88,6 +91,7 @@ canvas#board { display: block; touch-action: none; }
     <div id="board-wrapper">
       <canvas id="board"></canvas>
       <div id="cpu-thinking">CPU思考中...</div>
+      <div id="auto-pass-toast"><span class="pass-name"></span><br>置けるピースがありません</div>
     </div>
   </div>
   <div id="piece-panel">
@@ -721,6 +725,46 @@ function handleBoardTap(pos) {
   }
 }
 
+// ===== Auto Pass =====
+function hasValidMove(player) {
+  const pieces = playerPieces[player];
+  const cornerPositions = getCornerPositions(player);
+  if (cornerPositions.length === 0 && !isFirstMove(player)) return false;
+
+  for (let idx = 0; idx < pieces.length; idx++) {
+    if (pieces[idx].used) continue;
+    const orientations = getAllOrientations(pieces[idx].shape);
+    for (const orient of orientations) {
+      for (const [cr, cc] of cornerPositions) {
+        for (const [dr, dc] of orient) {
+          const br = cr - dr;
+          const bc = cc - dc;
+          if (canPlace(player, orient, br, bc)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function showAutoPassToast(player, callback) {
+  const toast = document.getElementById('auto-pass-toast');
+  const nameSpan = toast.querySelector('.pass-name');
+  nameSpan.textContent = players[player].name;
+  nameSpan.style.color = players[player].color;
+  toast.style.display = 'block';
+
+  // Remove and re-add to restart animation
+  toast.style.animation = 'none';
+  toast.offsetHeight; // trigger reflow
+  toast.style.animation = '';
+
+  setTimeout(() => {
+    toast.style.display = 'none';
+    if (callback) callback();
+  }, 1800);
+}
+
 // ===== Turn Management =====
 function nextTurn() {
   currentPlayer = (currentPlayer + 1) % 4;
@@ -739,6 +783,22 @@ function nextTurn() {
   updateTurnIndicator();
   updatePieceList();
   drawBoard();
+
+  // Check if current player has any valid moves
+  if (!gameOver && !playerPassed[currentPlayer] && !hasValidMove(currentPlayer)) {
+    // Auto-pass with notification
+    showAutoPassToast(currentPlayer, () => {
+      playerPassed[currentPlayer] = true;
+      passCount++;
+      saveGame();
+      if (passCount >= 4 || checkAllPassed()) {
+        endGame();
+      } else {
+        nextTurn();
+      }
+    });
+    return;
+  }
 
   // If CPU player's turn, auto-play
   if (isCpuPlayer(currentPlayer) && !gameOver) {
