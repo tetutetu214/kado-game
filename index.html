@@ -246,6 +246,7 @@ let players = PLAYERS;
 let cpuThinking = false;
 let humanPlayer = 0; // Which player index is human
 let viewingPlayer = null; // Which player's pieces are being viewed (null = own)
+let placeableCornersCache = null; // Cache for placeable corner positions
 let hoverPos = null;
 let lastPlacedCells = []; // [[r,c], ...] for highlight
 
@@ -323,10 +324,9 @@ function drawBoard() {
     }
   });
 
-  // Highlight placeable corners for current player (only when no piece selected or piece selected)
-  if (!gameOver && !cpuThinking && !isCpuPlayer(currentPlayer)) {
-    const cp = getCornerPositions(currentPlayer);
-    for (const [cr, cc] of cp) {
+  // Highlight corners where current player can actually place a piece (cached)
+  if (!gameOver && !cpuThinking && !isCpuPlayer(currentPlayer) && placeableCornersCache) {
+    for (const [cr, cc] of placeableCornersCache) {
       const dotX = cc * cellSize + cellSize / 2;
       const dotY = cr * cellSize + cellSize / 2;
       ctx.fillStyle = players[currentPlayer].light;
@@ -905,6 +905,30 @@ function passTurn() {
   }
 }
 
+function updatePlaceableCorners() {
+  placeableCornersCache = [];
+  if (gameOver || isCpuPlayer(currentPlayer)) return;
+  const cp = getCornerPositions(currentPlayer);
+  const pieces = playerPieces[currentPlayer];
+  for (const [cr, cc] of cp) {
+    let canUse = false;
+    for (let idx = 0; idx < pieces.length && !canUse; idx++) {
+      if (pieces[idx].used) continue;
+      const orientations = getAllOrientations(pieces[idx].shape);
+      for (const orient of orientations) {
+        if (canUse) break;
+        for (const [dr, dc] of orient) {
+          if (canPlace(currentPlayer, orient, cr - dr, cc - dc)) {
+            canUse = true;
+            break;
+          }
+        }
+      }
+    }
+    if (canUse) placeableCornersCache.push([cr, cc]);
+  }
+}
+
 function updateTurnIndicator() {
   const el = document.getElementById('turn-indicator');
   const p = players[currentPlayer];
@@ -913,6 +937,7 @@ function updateTurnIndicator() {
   // Clear viewing mode on turn change
   viewingPlayer = null;
   document.getElementById('viewing-label').style.display = 'none';
+  updatePlaceableCorners();
   updateStatsBar();
 }
 
