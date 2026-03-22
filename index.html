@@ -854,6 +854,7 @@ function undoMove() {
 }
 
 function handleBoardTap(pos) {
+  console.log('handleBoardTap', {pos, currentShape: !!currentShape, selectedPieceIdx, currentPlayer, cellSize});
   if (!currentShape || selectedPieceIdx === null) {
     ghostPos = null;
     drawBoard();
@@ -864,6 +865,7 @@ function handleBoardTap(pos) {
   const midC = Math.floor(Math.max(...currentShape.map(s => s[1])) / 2);
   const br = pos.r - midR;
   const bc = pos.c - midC;
+  console.log('trying place', {br, bc, midR, midC, shape: currentShape});
 
   if (canPlace(currentPlayer, currentShape, br, bc)) {
     // Save undo snapshot before placing
