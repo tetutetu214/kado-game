@@ -91,9 +91,9 @@ canvas#board { display: block; touch-action: none; }
 #stats-modal .stats-close { display: block; margin: 16px auto 0; background: #e94560; border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 16px; cursor: pointer; }
 #stats-modal .stats-reset { display: block; margin: 8px auto 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; }
 .feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
-#order-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
-#order-select h2 { font-size: 18px; margin-bottom: 4px; }
-#order-select p { font-size: 13px; color: #aaa; }
+#order-select, #difficulty-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
+#order-select h2, #difficulty-select h2 { font-size: 18px; margin-bottom: 4px; }
+#order-select p, #difficulty-select p { font-size: 13px; color: #aaa; }
 .order-btn { background: #0f3460; border: none; color: #eee; padding: 12px 24px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 220px; text-align: center; touch-action: manipulation; }
 .order-btn:active { background: #e94560; }
 .order-btn .corner-label { font-size: 11px; color: #aaa; display: block; margin-top: 2px; }
@@ -128,11 +128,18 @@ canvas#board { display: block; touch-action: none; }
   <div id="order-select">
     <h2>何番手でプレイ？</h2>
     <p>コーナーがスタート位置です</p>
-    <button class="order-btn" onclick="startCpuGame(0)">1番手<span class="corner-label">左上コーナー</span></button>
-    <button class="order-btn" onclick="startCpuGame(1)">2番手<span class="corner-label">右上コーナー</span></button>
-    <button class="order-btn" onclick="startCpuGame(2)">3番手<span class="corner-label">右下コーナー</span></button>
-    <button class="order-btn" onclick="startCpuGame(3)">4番手<span class="corner-label">左下コーナー</span></button>
+    <button class="order-btn" onclick="selectOrder(0)">1番手<span class="corner-label">左上コーナー</span></button>
+    <button class="order-btn" onclick="selectOrder(1)">2番手<span class="corner-label">右上コーナー</span></button>
+    <button class="order-btn" onclick="selectOrder(2)">3番手<span class="corner-label">右下コーナー</span></button>
+    <button class="order-btn" onclick="selectOrder(3)">4番手<span class="corner-label">左下コーナー</span></button>
     <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideOrderSelect()">戻る</button>
+  </div>
+  <div id="difficulty-select">
+    <h2>CPUの強さ</h2>
+    <button class="order-btn" onclick="startCpuGame('easy')">よわい<span class="corner-label">ランダム寄り・初心者向け</span></button>
+    <button class="order-btn" onclick="startCpuGame('normal')">ふつう<span class="corner-label">バランス型</span></button>
+    <button class="order-btn" onclick="startCpuGame('hard')">つよい<span class="corner-label">妨害重視・上級者向け</span></button>
+    <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideDifficultySelect()">戻る</button>
   </div>
   <button class="rules-link" onclick="showRules()">遊び方を見る</button>
   <button class="stats-link" onclick="showStats()">戦績を見る</button>
@@ -182,9 +189,9 @@ canvas#board { display: block; touch-action: none; }
 const BOARD_SIZE = 20;
 const PLAYERS = [
   { id: 0, name: 'あなた', color: '#e63946', light: '#ff6b6b' },
-  { id: 1, name: 'CPU1🔥', color: '#457b9d', light: '#6bb5e9' },
-  { id: 2, name: 'CPU2🛡️', color: '#2a9d8f', light: '#5dd9cb' },
-  { id: 3, name: 'CPU3🎲', color: '#e9c46a', light: '#fff3a0' }
+  { id: 1, name: 'CPU1', color: '#457b9d', light: '#6bb5e9' },
+  { id: 2, name: 'CPU2', color: '#2a9d8f', light: '#5dd9cb' },
+  { id: 3, name: 'CPU3', color: '#e9c46a', light: '#fff3a0' }
 ];
 
 const PLAYERS_LOCAL = [
@@ -194,35 +201,31 @@ const PLAYERS_LOCAL = [
   { id: 3, name: 'P4', color: '#e9c46a', light: '#fff3a0' }
 ];
 
-// CPU Personality System
-const CPU_PERSONALITIES = {
-  aggressive: {
-    name: 'アグレッシブ',
-    emoji: '🔥',
-    sizeWeight: 15,
-    cornerWeight: 2,
-    centerWeight: 3,
-    blockWeight: 0,
-    randomness: 1
+// CPU Difficulty & Personality System
+let cpuDifficulty = 'normal';
+
+const DIFFICULTY_PARAMS = {
+  easy: {
+    aggressive:  { sizeWeight: 8, cornerWeight: 1, centerWeight: 1, blockWeight: 0, randomness: 12 },
+    defensive:   { sizeWeight: 5, cornerWeight: 2, centerWeight: 1, blockWeight: 2, randomness: 12 },
+    trickster:   { sizeWeight: 6, cornerWeight: 1, centerWeight: 1, blockWeight: 1, randomness: 15 }
   },
-  defensive: {
-    name: 'ディフェンシブ',
-    emoji: '🛡️',
-    sizeWeight: 6,
-    cornerWeight: 5,
-    centerWeight: 1,
-    blockWeight: 8,
-    randomness: 1
+  normal: {
+    aggressive:  { sizeWeight: 15, cornerWeight: 2, centerWeight: 3, blockWeight: 0, randomness: 1 },
+    defensive:   { sizeWeight: 6, cornerWeight: 5, centerWeight: 1, blockWeight: 8, randomness: 1 },
+    trickster:   { sizeWeight: 8, cornerWeight: 3, centerWeight: 2, blockWeight: 3, randomness: 8 }
   },
-  trickster: {
-    name: 'トリックスター',
-    emoji: '🎲',
-    sizeWeight: 8,
-    cornerWeight: 3,
-    centerWeight: 2,
-    blockWeight: 3,
-    randomness: 8
+  hard: {
+    aggressive:  { sizeWeight: 18, cornerWeight: 4, centerWeight: 5, blockWeight: 3, randomness: 0 },
+    defensive:   { sizeWeight: 8, cornerWeight: 7, centerWeight: 2, blockWeight: 12, randomness: 0 },
+    trickster:   { sizeWeight: 10, cornerWeight: 4, centerWeight: 3, blockWeight: 6, randomness: 2 }
   }
+};
+
+const CPU_PERSONALITIES = {
+  aggressive: { name: 'アグレッシブ', emoji: '\uD83D\uDD25' },
+  defensive:  { name: 'ディフェンシブ', emoji: '\uD83D\uDEE1\uFE0F' },
+  trickster:  { name: 'トリックスター', emoji: '\uD83C\uDFB2' }
 };
 
 // Assign personality to each CPU player dynamically
@@ -622,7 +625,7 @@ function cpuMove(player) {
   if (cornerPositions.length === 0 && !isFirstMove(player)) return null;
 
   const personalityKey = getCpuPersonality(player) || 'aggressive';
-  const p = CPU_PERSONALITIES[personalityKey];
+  const p = DIFFICULTY_PARAMS[cpuDifficulty][personalityKey];
 
   let bestMove = null;
   let bestScore = -Infinity;
@@ -1182,6 +1185,7 @@ function saveGame() {
       gameMode: gameMode,
       humanPlayer: humanPlayer,
       pieceUsed: playerPieces.map(pp => pp.map(p => p.used)),
+      cpuDifficulty: cpuDifficulty,
       timestamp: Date.now()
     };
     localStorage.setItem('blokus_save', JSON.stringify(saveData));
@@ -1211,9 +1215,20 @@ function resumeGame() {
 
   gameMode = save.gameMode;
   humanPlayer = save.humanPlayer !== undefined ? save.humanPlayer : 0;
+  cpuDifficulty = save.cpuDifficulty || 'normal';
   // Rebuild players array
   if (gameMode === 'cpu') {
-    const cpuNames = ['CPU1🔥', 'CPU2🛡️', 'CPU3🎲'];
+    const diffLabel = { easy: '', normal: '', hard: '' }[cpuDifficulty] || '';
+    const cpuPersonalities = [];
+    let ci = 0;
+    for (let i = 0; i < 4; i++) {
+      if (i !== humanPlayer) {
+        const pk = CPU_PERSONALITY_LIST[ci];
+        cpuPersonalities.push(CPU_PERSONALITIES[pk].emoji);
+        ci++;
+      }
+    }
+    const cpuNames = cpuPersonalities.map((e, i) => 'CPU' + (i + 1) + e);
     const colors = [
       { color: '#e63946', light: '#ff6b6b' },
       { color: '#457b9d', light: '#6bb5e9' },
@@ -1297,8 +1312,20 @@ function hideOrderSelect() {
   document.getElementById('main-menu').style.display = '';
 }
 
-function startCpuGame(order) {
+function selectOrder(order) {
   humanPlayer = order;
+  document.getElementById('order-select').style.display = 'none';
+  document.getElementById('difficulty-select').style.display = 'flex';
+}
+
+function hideDifficultySelect() {
+  document.getElementById('difficulty-select').style.display = 'none';
+  document.getElementById('order-select').style.display = 'flex';
+}
+
+function startCpuGame(difficulty) {
+  cpuDifficulty = difficulty;
+  document.getElementById('difficulty-select').style.display = 'none';
   startGame('cpu');
 }
 
