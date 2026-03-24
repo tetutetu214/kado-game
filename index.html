@@ -92,17 +92,18 @@ canvas#board { display: block; touch-action: none; }
 #stats-modal .stats-reset { display: block; margin: 8px auto 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; }
 .feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
 #order-select, #difficulty-select, #char-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
-#order-select h2, #difficulty-select h2, #char-select h2 { font-size: 18px; margin-bottom: 4px; }
-#order-select p, #difficulty-select p, #char-select p { font-size: 13px; color: #aaa; }
+#order-select h2, #difficulty-select h2, #char-select h2 { font-size: 16px; margin-bottom: 4px; }
+#order-select p, #difficulty-select p, #char-select p { font-size: 12px; color: #aaa; }
 #char-select .char-slot-label { font-size: 14px; font-weight: bold; margin-top: 4px; }
-#char-select .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 280px; }
-#char-select .char-card { background: #0f3460; border: 2px solid transparent; border-radius: 10px; padding: 8px 4px; text-align: center; cursor: pointer; touch-action: manipulation; transition: border-color 0.2s; }
+#char-select .char-grid { display: flex; flex-direction: column; gap: 6px; width: 280px; max-height: 55vh; overflow-y: auto; }
+#char-select .char-card { background: #0f3460; border: 2px solid transparent; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; touch-action: manipulation; transition: border-color 0.2s; }
 #char-select .char-card:active { background: #1a4a80; }
 #char-select .char-card.selected { border-color: #e94560; background: #1a3a6a; }
-#char-select .char-card .char-emoji { font-size: 28px; display: block; }
-#char-select .char-card .char-name { font-size: 12px; color: #eee; display: block; margin-top: 2px; }
-#char-select .char-card .char-desc { font-size: 10px; color: #aaa; display: block; }
-#char-select .char-card .char-diff { font-size: 9px; display: block; margin-top: 2px; padding: 1px 6px; border-radius: 4px; display: inline-block; }
+#char-select .char-card .char-emoji { font-size: 30px; flex-shrink: 0; }
+#char-select .char-card .char-info { flex: 1; text-align: left; }
+#char-select .char-card .char-name { font-size: 14px; color: #eee; font-weight: bold; }
+#char-select .char-card .char-diff { font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+#char-select .char-card .char-stats { font-size: 11px; color: #ccc; line-height: 1.4; margin-top: 2px; }
 .diff-easy { background: #2a9d5a; color: #fff; }
 .diff-normal { background: #c9a227; color: #fff; }
 .diff-hard { background: #c0392b; color: #fff; }
@@ -220,15 +221,15 @@ const PLAYERS_LOCAL = [
 let cpuCharacters = [null, null, null];
 
 const CPU_CHARACTERS = [
-  { id: 'slime',    name: 'スライム',     emoji: '\uD83D\uDFE2', difficulty: 'easy',   personality: 'aggressive',  desc: '\u304A\u3063\u3061\u3087\u3053\u3061\u3087\u3044\u653B\u3081' },
-  { id: 'turtle',   name: 'カメ',         emoji: '\uD83D\uDC22', difficulty: 'easy',   personality: 'defensive',   desc: '\u306E\u3093\u3073\u308A\u5B88\u308A' },
-  { id: 'coin',     name: 'コイン',       emoji: '\uD83E\uDE99', difficulty: 'easy',   personality: 'trickster',   desc: '\u304D\u307E\u3050\u308C' },
-  { id: 'knight',   name: 'ナイト',       emoji: '\u2694\uFE0F', difficulty: 'normal', personality: 'aggressive',  desc: '\u653B\u3081\u91CD\u8996' },
-  { id: 'shield',   name: 'シールド',     emoji: '\uD83D\uDEE1\uFE0F', difficulty: 'normal', personality: 'defensive',   desc: '\u5805\u5B9F\u306A\u5B88\u308A' },
-  { id: 'joker',    name: 'ジョーカー',   emoji: '\uD83C\uDCCF', difficulty: 'normal', personality: 'trickster',   desc: '\u8AAD\u3081\u306A\u3044\u52D5\u304D' },
-  { id: 'dragon',   name: 'ドラゴン',     emoji: '\uD83D\uDC32', difficulty: 'hard',   personality: 'aggressive',  desc: '\u6700\u5927\u706B\u529B' },
-  { id: 'fortress', name: 'フォートレス', emoji: '\uD83C\uDFF0', difficulty: 'hard',   personality: 'defensive',   desc: '\u9244\u58C1\uFF0B\u59A8\u5BB3' },
-  { id: 'demon',    name: 'デーモン',     emoji: '\uD83D\uDC7F', difficulty: 'hard',   personality: 'trickster',   desc: '\u8A08\u7B97\u3055\u308C\u305F\u6DF7\u6C8C' }
+  { id: 'slime',    name: '\u30B9\u30E9\u30A4\u30E0',     emoji: '\uD83D\uDFE2', difficulty: 'easy',   personality: 'aggressive',  atk: 1, def: 0, rng: 3 },
+  { id: 'turtle',   name: '\u30AB\u30E1',         emoji: '\uD83D\uDC22', difficulty: 'easy',   personality: 'defensive',   atk: 0, def: 1, rng: 3 },
+  { id: 'coin',     name: '\u30B3\u30A4\u30F3',       emoji: '\uD83E\uDE99', difficulty: 'easy',   personality: 'trickster',   atk: 1, def: 0, rng: 3 },
+  { id: 'knight',   name: '\u30CA\u30A4\u30C8',       emoji: '\u2694\uFE0F', difficulty: 'normal', personality: 'aggressive',  atk: 3, def: 0, rng: 0 },
+  { id: 'shield',   name: '\u30B7\u30FC\u30EB\u30C9',     emoji: '\uD83D\uDEE1\uFE0F', difficulty: 'normal', personality: 'defensive',   atk: 1, def: 3, rng: 0 },
+  { id: 'joker',    name: '\u30B8\u30E7\u30FC\u30AB\u30FC',   emoji: '\uD83C\uDCCF', difficulty: 'normal', personality: 'trickster',   atk: 1, def: 1, rng: 2 },
+  { id: 'dragon',   name: '\u30C9\u30E9\u30B4\u30F3',     emoji: '\uD83D\uDC32', difficulty: 'hard',   personality: 'aggressive',  atk: 3, def: 1, rng: 0 },
+  { id: 'fortress', name: '\u30D5\u30A9\u30FC\u30C8\u30EC\u30B9', emoji: '\uD83C\uDFF0', difficulty: 'hard',   personality: 'defensive',   atk: 1, def: 3, rng: 0 },
+  { id: 'demon',    name: '\u30C7\u30FC\u30E2\u30F3',     emoji: '\uD83D\uDC7F', difficulty: 'hard',   personality: 'trickster',   atk: 2, def: 2, rng: 1 }
 ];
 
 const DIFFICULTY_PARAMS = {
@@ -1391,13 +1392,19 @@ function renderCharSelect() {
   const diffLabels = { easy: 'よわい', normal: 'ふつう', hard: 'つよい' };
   const diffClass = { easy: 'diff-easy', normal: 'diff-normal', hard: 'diff-hard' };
 
+  function stars(n) { var s = ''; for (var j = 0; j < 3; j++) s += j < n ? '\u2605' : '\u2606'; return s; }
   CPU_CHARACTERS.forEach((ch, i) => {
     const card = document.createElement('div');
     card.className = 'char-card';
     card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
-      '<span class="char-name">' + ch.name + '</span>' +
-      '<span class="char-desc">' + ch.desc + '</span>' +
-      '<span class="char-diff ' + diffClass[ch.difficulty] + '">' + diffLabels[ch.difficulty] + '</span>';
+      '<div class="char-info">' +
+        '<span class="char-name">' + ch.name + ' <span class="char-diff ' + diffClass[ch.difficulty] + '">' + diffLabels[ch.difficulty] + '</span></span>' +
+        '<div class="char-stats">' +
+          '\u653B ' + stars(ch.atk) + '<br>' +
+          '\u5B88 ' + stars(ch.def) + '<br>' +
+          '\u904B ' + stars(ch.rng) +
+        '</div>' +
+      '</div>';
     card.onclick = function() { pickCharacter(i); };
     grid.appendChild(card);
   });
@@ -1423,7 +1430,7 @@ function pickCharacter(charIdx) {
         ci++;
       }
       card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
-        '<span class="char-name">' + pos + '番手: ' + ch.name + '</span>';
+        '<div class="char-info"><span class="char-name">' + pos + '\u756A\u624B: ' + ch.name + '</span></div>';
       grid.appendChild(card);
     });
   } else {
