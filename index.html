@@ -91,9 +91,21 @@ canvas#board { display: block; touch-action: none; }
 #stats-modal .stats-close { display: block; margin: 16px auto 0; background: #e94560; border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 16px; cursor: pointer; }
 #stats-modal .stats-reset { display: block; margin: 8px auto 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; }
 .feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
-#order-select, #difficulty-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
-#order-select h2, #difficulty-select h2 { font-size: 18px; margin-bottom: 4px; }
-#order-select p, #difficulty-select p { font-size: 13px; color: #aaa; }
+#order-select, #difficulty-select, #char-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
+#order-select h2, #difficulty-select h2, #char-select h2 { font-size: 18px; margin-bottom: 4px; }
+#order-select p, #difficulty-select p, #char-select p { font-size: 13px; color: #aaa; }
+#char-select .char-slot-label { font-size: 14px; font-weight: bold; margin-top: 4px; }
+#char-select .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 280px; }
+#char-select .char-card { background: #0f3460; border: 2px solid transparent; border-radius: 10px; padding: 8px 4px; text-align: center; cursor: pointer; touch-action: manipulation; transition: border-color 0.2s; }
+#char-select .char-card:active { background: #1a4a80; }
+#char-select .char-card.selected { border-color: #e94560; background: #1a3a6a; }
+#char-select .char-card .char-emoji { font-size: 28px; display: block; }
+#char-select .char-card .char-name { font-size: 12px; color: #eee; display: block; margin-top: 2px; }
+#char-select .char-card .char-desc { font-size: 10px; color: #aaa; display: block; }
+#char-select .char-card .char-diff { font-size: 9px; display: block; margin-top: 2px; padding: 1px 6px; border-radius: 4px; display: inline-block; }
+.diff-easy { background: #2a9d5a; color: #fff; }
+.diff-normal { background: #c9a227; color: #fff; }
+.diff-hard { background: #c0392b; color: #fff; }
 .order-btn { background: #0f3460; border: none; color: #eee; padding: 12px 24px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 220px; text-align: center; touch-action: manipulation; }
 .order-btn:active { background: #e94560; }
 .order-btn .corner-label { font-size: 11px; color: #aaa; display: block; margin-top: 2px; }
@@ -134,12 +146,15 @@ canvas#board { display: block; touch-action: none; }
     <button class="order-btn" onclick="selectOrder(3)">4番手<span class="corner-label">左下コーナー</span></button>
     <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideOrderSelect()">戻る</button>
   </div>
-  <div id="difficulty-select">
-    <h2>CPUの強さ</h2>
-    <button class="order-btn" onclick="startCpuGame('easy')">よわい<span class="corner-label">ランダム寄り・初心者向け</span></button>
-    <button class="order-btn" onclick="startCpuGame('normal')">ふつう<span class="corner-label">バランス型</span></button>
-    <button class="order-btn" onclick="startCpuGame('hard')">つよい<span class="corner-label">妨害重視・上級者向け</span></button>
-    <button class="order-btn" style="background:#555;margin-top:8px;" onclick="hideDifficultySelect()">戻る</button>
+  <div id="char-select">
+    <h2>対戦相手を選ぼう</h2>
+    <p>3体のCPUを選んでください（同じキャラもOK）</p>
+    <div class="char-slot-label" id="char-slot-label"></div>
+    <div class="char-grid" id="char-grid"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="order-btn" style="background:#555;width:auto;padding:10px 20px;" onclick="charSelectBack()">戻る</button>
+      <button class="order-btn" id="char-start-btn" style="background:#e94560;width:auto;padding:10px 20px;display:none;" onclick="confirmCharSelect()">この3体で開始！</button>
+    </div>
   </div>
   <button class="rules-link" onclick="showRules()">遊び方を見る</button>
   <button class="stats-link" onclick="showStats()">戦績を見る</button>
@@ -201,8 +216,20 @@ const PLAYERS_LOCAL = [
   { id: 3, name: 'P4', color: '#e9c46a', light: '#fff3a0' }
 ];
 
-// CPU Difficulty & Personality System
-let cpuDifficulty = 'normal';
+// CPU Character System (9 characters = 3 difficulties x 3 personalities)
+let cpuCharacters = [null, null, null];
+
+const CPU_CHARACTERS = [
+  { id: 'slime',    name: 'スライム',     emoji: '\uD83D\uDFE2', difficulty: 'easy',   personality: 'aggressive',  desc: '\u304A\u3063\u3061\u3087\u3053\u3061\u3087\u3044\u653B\u3081' },
+  { id: 'turtle',   name: 'カメ',         emoji: '\uD83D\uDC22', difficulty: 'easy',   personality: 'defensive',   desc: '\u306E\u3093\u3073\u308A\u5B88\u308A' },
+  { id: 'coin',     name: 'コイン',       emoji: '\uD83E\uDE99', difficulty: 'easy',   personality: 'trickster',   desc: '\u304D\u307E\u3050\u308C' },
+  { id: 'knight',   name: 'ナイト',       emoji: '\u2694\uFE0F', difficulty: 'normal', personality: 'aggressive',  desc: '\u653B\u3081\u91CD\u8996' },
+  { id: 'shield',   name: 'シールド',     emoji: '\uD83D\uDEE1\uFE0F', difficulty: 'normal', personality: 'defensive',   desc: '\u5805\u5B9F\u306A\u5B88\u308A' },
+  { id: 'joker',    name: 'ジョーカー',   emoji: '\uD83C\uDCCF', difficulty: 'normal', personality: 'trickster',   desc: '\u8AAD\u3081\u306A\u3044\u52D5\u304D' },
+  { id: 'dragon',   name: 'ドラゴン',     emoji: '\uD83D\uDC32', difficulty: 'hard',   personality: 'aggressive',  desc: '\u6700\u5927\u706B\u529B' },
+  { id: 'fortress', name: 'フォートレス', emoji: '\uD83C\uDFF0', difficulty: 'hard',   personality: 'defensive',   desc: '\u9244\u58C1\uFF0B\u59A8\u5BB3' },
+  { id: 'demon',    name: 'デーモン',     emoji: '\uD83D\uDC7F', difficulty: 'hard',   personality: 'trickster',   desc: '\u8A08\u7B97\u3055\u308C\u305F\u6DF7\u6C8C' }
+];
 
 const DIFFICULTY_PARAMS = {
   easy: {
@@ -222,24 +249,32 @@ const DIFFICULTY_PARAMS = {
   }
 };
 
-const CPU_PERSONALITIES = {
-  aggressive: { name: 'アグレッシブ', emoji: '\uD83D\uDD25' },
-  defensive:  { name: 'ディフェンシブ', emoji: '\uD83D\uDEE1\uFE0F' },
-  trickster:  { name: 'トリックスター', emoji: '\uD83C\uDFB2' }
-};
-
-// Assign personality to each CPU player dynamically
-const CPU_PERSONALITY_LIST = ['aggressive', 'defensive', 'trickster'];
 function getCpuPersonality(player) {
   if (player === humanPlayer) return null;
-  // Assign personalities to CPU players in order, skipping human
   let cpuIdx = 0;
   for (let i = 0; i < 4; i++) {
     if (i === humanPlayer) continue;
-    if (i === player) return CPU_PERSONALITY_LIST[cpuIdx];
+    if (i === player) {
+      const ch = cpuCharacters[cpuIdx];
+      return ch ? ch.personality : 'aggressive';
+    }
     cpuIdx++;
   }
   return 'aggressive';
+}
+
+function getCpuDifficulty(player) {
+  if (player === humanPlayer) return 'normal';
+  let cpuIdx = 0;
+  for (let i = 0; i < 4; i++) {
+    if (i === humanPlayer) continue;
+    if (i === player) {
+      const ch = cpuCharacters[cpuIdx];
+      return ch ? ch.difficulty : 'normal';
+    }
+    cpuIdx++;
+  }
+  return 'normal';
 }
 
 // All 21 Blokus pieces (relative coordinates)
@@ -625,7 +660,8 @@ function cpuMove(player) {
   if (cornerPositions.length === 0 && !isFirstMove(player)) return null;
 
   const personalityKey = getCpuPersonality(player) || 'aggressive';
-  const p = DIFFICULTY_PARAMS[cpuDifficulty][personalityKey];
+  const diffKey = getCpuDifficulty(player);
+  const p = DIFFICULTY_PARAMS[diffKey][personalityKey];
 
   let bestMove = null;
   let bestScore = -Infinity;
@@ -1185,7 +1221,7 @@ function saveGame() {
       gameMode: gameMode,
       humanPlayer: humanPlayer,
       pieceUsed: playerPieces.map(pp => pp.map(p => p.used)),
-      cpuDifficulty: cpuDifficulty,
+      cpuCharacterIds: cpuCharacters.map(c => c ? c.id : null),
       timestamp: Date.now()
     };
     localStorage.setItem('blokus_save', JSON.stringify(saveData));
@@ -1215,20 +1251,14 @@ function resumeGame() {
 
   gameMode = save.gameMode;
   humanPlayer = save.humanPlayer !== undefined ? save.humanPlayer : 0;
-  cpuDifficulty = save.cpuDifficulty || 'normal';
+  // Restore CPU characters from save
+  if (save.cpuCharacterIds) {
+    cpuCharacters = save.cpuCharacterIds.map(id => CPU_CHARACTERS.find(c => c.id === id) || CPU_CHARACTERS[0]);
+  } else {
+    cpuCharacters = [CPU_CHARACTERS[3], CPU_CHARACTERS[4], CPU_CHARACTERS[5]]; // default normal
+  }
   // Rebuild players array
   if (gameMode === 'cpu') {
-    const diffLabel = { easy: '', normal: '', hard: '' }[cpuDifficulty] || '';
-    const cpuPersonalities = [];
-    let ci = 0;
-    for (let i = 0; i < 4; i++) {
-      if (i !== humanPlayer) {
-        const pk = CPU_PERSONALITY_LIST[ci];
-        cpuPersonalities.push(CPU_PERSONALITIES[pk].emoji);
-        ci++;
-      }
-    }
-    const cpuNames = cpuPersonalities.map((e, i) => 'CPU' + (i + 1) + e);
     const colors = [
       { color: '#e63946', light: '#ff6b6b' },
       { color: '#457b9d', light: '#6bb5e9' },
@@ -1241,7 +1271,9 @@ function resumeGame() {
       if (i === humanPlayer) {
         players.push({ id: i, name: 'あなた', ...colors[i] });
       } else {
-        players.push({ id: i, name: cpuNames[cpuIdx], ...colors[i] });
+        const ch = cpuCharacters[cpuIdx];
+        const cpuName = ch ? ch.emoji + ch.name : 'CPU' + (cpuIdx + 1);
+        players.push({ id: i, name: cpuName, ...colors[i] });
         cpuIdx++;
       }
     }
@@ -1315,17 +1347,82 @@ function hideOrderSelect() {
 function selectOrder(order) {
   humanPlayer = order;
   document.getElementById('order-select').style.display = 'none';
-  document.getElementById('difficulty-select').style.display = 'flex';
+  document.getElementById('char-select').style.display = 'flex';
+  charSelectSlot = 0;
+  cpuCharacters = [null, null, null];
+  renderCharSelect();
 }
 
-function hideDifficultySelect() {
-  document.getElementById('difficulty-select').style.display = 'none';
-  document.getElementById('order-select').style.display = 'flex';
+let charSelectSlot = 0;
+
+function charSelectBack() {
+  if (charSelectSlot > 0) {
+    charSelectSlot--;
+    cpuCharacters[charSelectSlot] = null;
+    document.getElementById('char-start-btn').style.display = 'none';
+    renderCharSelect();
+  } else {
+    document.getElementById('char-select').style.display = 'none';
+    document.getElementById('order-select').style.display = 'flex';
+  }
 }
 
-function startCpuGame(difficulty) {
-  cpuDifficulty = difficulty;
-  document.getElementById('difficulty-select').style.display = 'none';
+function renderCharSelect() {
+  const label = document.getElementById('char-slot-label');
+  const slotNum = charSelectSlot + 1;
+  const colors = ['#457b9d', '#2a9d8f', '#e9c46a'];
+  // Adjust slot display based on human position
+  let cpuSlotIdx = 0;
+  let displayPositions = [];
+  for (let i = 0; i < 4; i++) {
+    if (i === humanPlayer) continue;
+    displayPositions.push(i + 1);
+    cpuSlotIdx++;
+  }
+  label.textContent = 'CPU ' + slotNum + '（' + displayPositions[charSelectSlot] + 'P）を選択';
+  label.style.color = colors[charSelectSlot];
+
+  const grid = document.getElementById('char-grid');
+  grid.innerHTML = '';
+  const diffLabels = { easy: 'よわい', normal: 'ふつう', hard: 'つよい' };
+  const diffClass = { easy: 'diff-easy', normal: 'diff-normal', hard: 'diff-hard' };
+
+  CPU_CHARACTERS.forEach((ch, i) => {
+    const card = document.createElement('div');
+    card.className = 'char-card';
+    card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
+      '<span class="char-name">' + ch.name + '</span>' +
+      '<span class="char-desc">' + ch.desc + '</span>' +
+      '<span class="char-diff ' + diffClass[ch.difficulty] + '">' + diffLabels[ch.difficulty] + '</span>';
+    card.onclick = function() { pickCharacter(i); };
+    grid.appendChild(card);
+  });
+}
+
+function pickCharacter(charIdx) {
+  cpuCharacters[charSelectSlot] = CPU_CHARACTERS[charIdx];
+  charSelectSlot++;
+
+  if (charSelectSlot >= 3) {
+    document.getElementById('char-start-btn').style.display = '';
+    document.getElementById('char-slot-label').textContent = '選択完了！';
+    // Show selected summary
+    const grid = document.getElementById('char-grid');
+    grid.innerHTML = '';
+    cpuCharacters.forEach((ch, i) => {
+      const card = document.createElement('div');
+      card.className = 'char-card selected';
+      card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
+        '<span class="char-name">CPU' + (i + 1) + ': ' + ch.name + '</span>';
+      grid.appendChild(card);
+    });
+  } else {
+    renderCharSelect();
+  }
+}
+
+function confirmCharSelect() {
+  document.getElementById('char-select').style.display = 'none';
   startGame('cpu');
 }
 
@@ -1336,7 +1433,6 @@ function startGame(mode) {
 
   // Build players array with human name at correct position
   if (mode === 'cpu') {
-    const cpuNames = ['CPU1🔥', 'CPU2🛡️', 'CPU3🎲'];
     const colors = [
       { color: '#e63946', light: '#ff6b6b' },
       { color: '#457b9d', light: '#6bb5e9' },
@@ -1349,7 +1445,9 @@ function startGame(mode) {
       if (i === humanPlayer) {
         players.push({ id: i, name: 'あなた', ...colors[i] });
       } else {
-        players.push({ id: i, name: cpuNames[cpuIdx], ...colors[i] });
+        const ch = cpuCharacters[cpuIdx];
+        const cpuName = ch ? ch.emoji + ch.name : 'CPU' + (cpuIdx + 1);
+        players.push({ id: i, name: cpuName, ...colors[i] });
         cpuIdx++;
       }
     }
