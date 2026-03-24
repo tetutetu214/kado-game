@@ -1348,6 +1348,9 @@ function selectOrder(order) {
   humanPlayer = order;
   document.getElementById('order-select').style.display = 'none';
   document.getElementById('char-select').style.display = 'flex';
+  // Hide title to save space on mobile
+  document.querySelector('#start-screen > h1').style.display = 'none';
+  document.querySelector('#start-screen > p').style.display = 'none';
   charSelectSlot = 0;
   cpuCharacters = [null, null, null];
   renderCharSelect();
@@ -1364,22 +1367,23 @@ function charSelectBack() {
   } else {
     document.getElementById('char-select').style.display = 'none';
     document.getElementById('order-select').style.display = 'flex';
+    document.querySelector('#start-screen > h1').style.display = '';
+    document.querySelector('#start-screen > p').style.display = '';
   }
 }
 
 function renderCharSelect() {
   const label = document.getElementById('char-slot-label');
   const slotNum = charSelectSlot + 1;
-  const colors = ['#457b9d', '#2a9d8f', '#e9c46a'];
+  const colors = ['#6bb5e9', '#5dd9cb', '#fff3a0'];
   // Adjust slot display based on human position
-  let cpuSlotIdx = 0;
   let displayPositions = [];
   for (let i = 0; i < 4; i++) {
     if (i === humanPlayer) continue;
     displayPositions.push(i + 1);
-    cpuSlotIdx++;
   }
-  label.textContent = 'CPU ' + slotNum + '（' + displayPositions[charSelectSlot] + 'P）を選択';
+  const ordinal = displayPositions[charSelectSlot];
+  label.textContent = slotNum + '体目（' + ordinal + '番手）を選択';
   label.style.color = colors[charSelectSlot];
 
   const grid = document.getElementById('char-grid');
@@ -1412,8 +1416,14 @@ function pickCharacter(charIdx) {
     cpuCharacters.forEach((ch, i) => {
       const card = document.createElement('div');
       card.className = 'char-card selected';
+      let pos = 0, ci = 0;
+      for (let p = 0; p < 4; p++) {
+        if (p === humanPlayer) continue;
+        if (ci === i) { pos = p + 1; break; }
+        ci++;
+      }
       card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
-        '<span class="char-name">CPU' + (i + 1) + ': ' + ch.name + '</span>';
+        '<span class="char-name">' + pos + '番手: ' + ch.name + '</span>';
       grid.appendChild(card);
     });
   } else {
