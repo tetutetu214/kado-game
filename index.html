@@ -1620,7 +1620,11 @@ function quitToTitle() {
   }
   document.getElementById('app').style.display = 'none';
   document.getElementById('start-screen').style.display = 'flex';
+  document.querySelector('#start-screen > h1').style.display = '';
+  document.querySelector('#start-screen > p').style.display = '';
+  document.getElementById('main-menu').style.display = 'flex';
   hideOrderSelect();
+  document.getElementById('char-select').style.display = 'none';
   const save = loadGame();
   const continueBtn = document.getElementById('continue-btn');
   if (continueBtn) continueBtn.style.display = save ? 'inline-block' : 'none';
@@ -1631,7 +1635,11 @@ function backToTitle() {
   deleteSave();
   document.getElementById('app').style.display = 'none';
   document.getElementById('start-screen').style.display = 'flex';
+  document.querySelector('#start-screen > h1').style.display = '';
+  document.querySelector('#start-screen > p').style.display = '';
+  document.getElementById('main-menu').style.display = 'flex';
   hideOrderSelect();
+  document.getElementById('char-select').style.display = 'none';
 }
 
 window.addEventListener('resize', () => {
