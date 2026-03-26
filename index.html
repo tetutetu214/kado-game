@@ -99,7 +99,7 @@ canvas#board { display: block; touch-action: none; }
 #char-select .char-card { background: rgba(15,52,96,0.4); border: 1px solid rgba(233,69,96,0.2); border-radius: 4px; padding: 8px 6px; text-align: center; cursor: pointer; touch-action: manipulation; transition: all 0.2s; }
 #char-select .char-card:active { background: #1a4a80; }
 #char-select .char-card.selected { border-color: #e94560; background: rgba(233,69,96,0.15); box-shadow: 0 0 10px rgba(233,69,96,0.3); }
-#char-select .char-card .char-emoji { font-size: 28px; display: block; }
+#char-select .char-card canvas { display: block; margin: 0 auto; }
 #char-select .char-card .char-info { display: flex; flex-direction: column; align-items: center; }
 #char-select .char-card .char-name { font-size: 13px; color: #eee; font-weight: bold; }
 #char-select .char-card .char-rank { font-size: 11px; color: #e94560; font-weight: bold; }
@@ -1372,15 +1372,20 @@ function renderCharSelect() {
 
   const grid = document.getElementById('char-grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+  grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
   CPU_CHARACTERS.forEach((ch, i) => {
     const card = document.createElement('div');
     card.className = 'char-card';
-    card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
-      '<div class="char-info">' +
-        '<span class="char-rank">Rank ' + ch.rank + '</span>' +
-        '<span class="char-name">' + ch.name + '</span>' +
-      '</div>';
+    const cvs = document.createElement('canvas');
+    cvs.width = 16; cvs.height = 16;
+    cvs.style.cssText = 'image-rendering:pixelated;width:40px;height:40px;';
+    card.appendChild(cvs);
+    const info = document.createElement('div');
+    info.className = 'char-info';
+    info.innerHTML = '<span class="char-rank">Rank ' + ch.rank + '</span>' +
+      '<span class="char-name">' + ch.name + '</span>';
+    card.appendChild(info);
+    drawCharPixelArt(cvs, ch.id);
     card.onclick = function() { pickCharacter(i); };
     grid.appendChild(card);
   });
@@ -1406,8 +1411,15 @@ function pickCharacter(charIdx) {
         if (ci === i) { pos = p + 1; break; }
         ci++;
       }
-      card.innerHTML = '<span class="char-emoji">' + ch.emoji + '</span>' +
-        '<div class="char-info"><span class="char-name">' + pos + '\u756A\u624B: ' + ch.name + '</span></div>';
+      const cvs = document.createElement('canvas');
+      cvs.width = 16; cvs.height = 16;
+      cvs.style.cssText = 'image-rendering:pixelated;width:40px;height:40px;';
+      card.appendChild(cvs);
+      const info = document.createElement('div');
+      info.className = 'char-info';
+      info.innerHTML = '<span class="char-name">#' + pos + ' ' + ch.name + '</span>';
+      card.appendChild(info);
+      drawCharPixelArt(cvs, ch.id);
       grid.appendChild(card);
     });
   } else {
