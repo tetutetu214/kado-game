@@ -3,7 +3,7 @@
 A polyomino strategy board game playable on iPhone / smartphone / PC.
 No external libraries required.
 
-GitHub Pages: https://tetutetu214.github.io/blokus-game/
+GitHub Pages: https://tetutetu214.github.io/kado-game/
 
 ## How to Play
 
