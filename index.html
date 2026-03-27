@@ -113,6 +113,8 @@ canvas#board { display: block; touch-action: none; }
 #auto-pass-toast { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; padding: 14px 28px; border-radius: 14px; font-size: 15px; z-index: 60; text-align: center; animation: fadeInOut 2s ease-in-out; pointer-events: none; }
 #auto-pass-toast .pass-name { font-weight: bold; font-size: 17px; }
 @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; } }
+.board-size-btn { border: 2px solid #333 !important; transition: border-color 0.2s; }
+.board-size-btn.selected { border-color: #e94560 !important; box-shadow: 0 0 8px #e94560; }
 </style>
 </head>
 <body>
@@ -126,6 +128,10 @@ canvas#board { display: block; touch-action: none; }
       CONTINUE
       <span class="sub">Resume saved game</span>
     </button>
+    <div id="board-size-select" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+      <button class="menu-btn board-size-btn selected" onclick="selectBoardSize(14)" style="width:auto;padding:8px 16px;font-size:13px;">14×14</button>
+      <button class="menu-btn board-size-btn" onclick="selectBoardSize(20)" style="width:auto;padding:8px 16px;font-size:13px;">20×20</button>
+    </div>
     <button class="start-btn" onclick="showOrderSelect()">
       1P vs CPU
       <span class="sub">Play against AI</span>
@@ -176,7 +182,7 @@ canvas#board { display: block; touch-action: none; }
   <div id="board-container">
     <div id="board-wrapper">
       <canvas id="board"></canvas>
-      <div id="cpu-thinking">CPU思考中...</div>
+      <div id="cpu-thinking">CPU THINKING...</div>
       <div id="auto-pass-toast"><span class="pass-name"></span><br>No valid moves - AUTO PASS</div>
     </div>
   </div>
@@ -185,8 +191,8 @@ canvas#board { display: block; touch-action: none; }
       <button class="icon-btn" onclick="rotatePiece()">↻</button>
       <button class="icon-btn" onclick="flipPiece()">↔</button>
       <button id="deselect-btn" onclick="deselectPiece()">×</button>
-      <button id="undo-btn" onclick="undoMove()" disabled>戻す</button>
-      <button id="pass-btn" onclick="passTurn()">パス</button>
+      <button id="undo-btn" onclick="undoMove()" disabled>UNDO</button>
+      <button id="pass-btn" onclick="passTurn()">PASS</button>
       <button id="quit-btn" onclick="quitToTitle()">🏠</button>
     </div>
     <div id="viewing-label">← Viewing <span></span> pieces (tap to return)</div>
@@ -198,14 +204,20 @@ canvas#board { display: block; touch-action: none; }
   <div id="modal" onclick="event.stopPropagation()">
     <h2 id="modal-title">SCORE</h2>
     <div id="modal-body"></div>
-    <button onclick="closeModal()">閉じる</button>
-    <button id="restart-btn" style="display:none;margin-left:8px;" onclick="backToTitle()">タイトルへ</button>
+    <button onclick="closeModal()">CLOSE</button>
+    <button id="restart-btn" style="display:none;margin-left:8px;" onclick="backToTitle()">TITLE</button>
   </div>
 </div>
 
 <script>
 // ===== Constants =====
-const BOARD_SIZE = 20;
+let BOARD_SIZE = 20;
+
+// Piece indices for 14x14 mode (n=1-4 all 9 + 3 pentominoes = 12 pieces, ~44 squares)
+// n=1-4: indices 0-8 (mono, domino, 2 trominos, 5 tetrominos)
+// Selected pentominoes: I-pento(idx 9), L-pento(idx 10), T-pento(idx 11) for variety
+const PIECES_14 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const PIECES_20 = null; // null = use all 21
 const PLAYERS = [
   { id: 0, name: 'YOU', color: '#0072B2', light: '#4da6d9' },
   { id: 1, name: 'CPU1', color: '#F0E442', light: '#f5ed7a' },
@@ -1117,7 +1129,7 @@ function updateStatsBar() {
     nameSpan.textContent = players[i].name;
     const valueSpan = document.createElement('div');
     valueSpan.className = 'stat-value';
-    valueSpan.textContent = remaining + 'ピース / ' + remainingSquares + 'マス';
+    valueSpan.textContent = remaining + 'pcs / ' + remainingSquares + 'sq';
     div.appendChild(nameSpan);
     div.appendChild(valueSpan);
     div.onclick = () => toggleViewPlayer(i);
@@ -1192,7 +1204,7 @@ function showScores() {
     div.appendChild(row);
   });
   body.appendChild(div);
-  document.getElementById('modal-title').textContent = 'スコア';
+  document.getElementById('modal-title').textContent = 'SCORE';
   document.getElementById('restart-btn').style.display = gameOver ? 'inline-block' : 'none';
   document.getElementById('modal-overlay').classList.add('show');
 }
@@ -1211,9 +1223,9 @@ function endGame() {
 
   let title;
   if (gameMode === 'cpu') {
-    title = winner === 0 ? '🏆 あなたの勝ち！' : `😢 ${players[winner].name} の勝ち`;
+    title = winner === 0 ? 'YOU WIN!' : players[winner].name + ' WINS';
   } else {
-    title = `🏆 ${players[winner].name} の勝ち！`;
+    title = players[winner].name + ' WINS!';
   }
   document.getElementById('modal-title').textContent = title;
   document.getElementById('restart-btn').style.display = 'inline-block';
@@ -1246,6 +1258,7 @@ function saveGame() {
       humanPlayer: humanPlayer,
       pieceUsed: playerPieces.map(pp => pp.map(p => p.used)),
       cpuCharacterIds: cpuCharacters.map(c => c ? c.id : null),
+      boardSize: BOARD_SIZE,
       timestamp: Date.now()
     };
     localStorage.setItem('kado_save', JSON.stringify(saveData));
@@ -1274,6 +1287,7 @@ function resumeGame() {
   if (!save) return;
 
   gameMode = save.gameMode;
+  BOARD_SIZE = save.boardSize || 20;
   humanPlayer = save.humanPlayer !== undefined ? save.humanPlayer : 0;
   // Restore CPU characters from save
   if (save.cpuCharacterIds) {
@@ -1321,13 +1335,13 @@ function resumeGame() {
 
   // Restore pieces
   playerPieces = [];
+  const resumeIdx = (BOARD_SIZE === 14) ? PIECES_14 : null;
   for (let p = 0; p < 4; p++) {
-    playerPieces.push(
-      PIECE_SHAPES.map((shape, idx) => ({
-        shape: shape.map(s => [...s]),
-        used: save.pieceUsed[p][idx]
-      }))
-    );
+    if (resumeIdx) {
+      playerPieces.push(resumeIdx.map((si, idx) => ({ shape: PIECE_SHAPES[si].map(s => [...s]), used: save.pieceUsed[p][idx] })));
+    } else {
+      playerPieces.push(PIECE_SHAPES.map((shape, idx) => ({ shape: shape.map(s => [...s]), used: save.pieceUsed[p][idx] })));
+    }
   }
 
   updateTurnIndicator();
@@ -1472,7 +1486,16 @@ function confirmCharSelect() {
   startGame('cpu');
 }
 
+let selectedBoardSize = 20;
+
+function selectBoardSize(size) {
+  selectedBoardSize = size;
+  document.querySelectorAll('.board-size-btn').forEach(function(b) { b.classList.remove('selected'); });
+  event.target.classList.add('selected');
+}
+
 function startGame(mode) {
+  BOARD_SIZE = selectedBoardSize;
   deleteSave(); // Clear old save when starting new game
   gameMode = mode;
   if (mode === 'local') humanPlayer = -1; // No CPU in local mode
@@ -1520,13 +1543,13 @@ function initGame() {
   lastPlacedCells = [[], [], [], []];
 
   playerPieces = [];
+  const activeIdx = (BOARD_SIZE === 14) ? PIECES_14 : null;
   for (let p = 0; p < 4; p++) {
-    playerPieces.push(
-      PIECE_SHAPES.map(shape => ({
-        shape: shape.map(s => [...s]),
-        used: false
-      }))
-    );
+    if (activeIdx) {
+      playerPieces.push(activeIdx.map(i => ({ shape: PIECE_SHAPES[i].map(s => [...s]), used: false })));
+    } else {
+      playerPieces.push(PIECE_SHAPES.map(shape => ({ shape: shape.map(s => [...s]), used: false })));
+    }
   }
 
   updateTurnIndicator();
@@ -1582,8 +1605,8 @@ function showStats() {
   body.innerHTML = '';
   const rows = [
     ['Games', stats.games],
-    ['勝利数', stats.wins + '回'],
-    ['勝率', stats.games > 0 ? Math.round(stats.wins / stats.games * 100) + '%' : '-'],
+    ['Wins', stats.wins],
+    ['Win Rate', stats.games > 0 ? Math.round(stats.wins / stats.games * 100) + '%' : '-'],
     ['1st Place', stats.ranks[0]],
     ['2nd Place', stats.ranks[1]],
     ['3rd Place', stats.ranks[2]],
@@ -1652,7 +1675,7 @@ function hideStats() {
 }
 
 function resetStats() {
-  if (confirm('戦績をリセットしますか？')) {
+  if (confirm('Reset all records?')) {
     localStorage.removeItem('kado_stats');
     showStats();
   }

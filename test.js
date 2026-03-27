@@ -264,6 +264,60 @@ assert('4マスピースは5個', PIECE_SHAPES.filter(s => s.length === 4).lengt
 assert('5マスピースは12個', PIECE_SHAPES.filter(s => s.length === 5).length === 12);
 assert('合計マス数は89', PIECE_SHAPES.reduce((sum, s) => sum + s.length, 0) === 89);
 
+// ===== 14x14 ボードサイズテスト =====
+const PIECES_14 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+section('14x14 ピースセットの検証');
+{
+  const pieces14 = PIECES_14.map(i => PIECE_SHAPES[i]);
+  assert('14x14ピース数は12個', pieces14.length === 12);
+  const totalSquares = pieces14.reduce((sum, s) => sum + s.length, 0);
+  assert('14x14 合計マス数は44', totalSquares === 44);
+  assert('14x14 カバー率は約89%', Math.abs((totalSquares * 4) / (14 * 14) - 0.898) < 0.01);
+  assert('14x14 n=1含む', pieces14.some(s => s.length === 1));
+  assert('14x14 n=2含む', pieces14.some(s => s.length === 2));
+  assert('14x14 n=3含む', pieces14.some(s => s.length === 3));
+  assert('14x14 n=4含む', pieces14.some(s => s.length === 4));
+  assert('14x14 n=5含む', pieces14.some(s => s.length === 5));
+}
+
+section('14x14 配置テスト');
+{
+  const BS14 = 14;
+  function makeBoard14() { return Array.from({ length: BS14 }, () => Array(BS14).fill(-1)); }
+  function canPlace14(board, player, shape, br, bc) {
+    const cells = shape.map(([dr, dc]) => [br + dr, bc + dc]);
+    for (const [r, c] of cells) {
+      if (r < 0 || r >= BS14 || c < 0 || c >= BS14) return false;
+      if (board[r][c] >= 0) return false;
+    }
+    for (const [r, c] of cells) {
+      const adj = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for (const [ar, ac] of adj) {
+        if (ar >= 0 && ar < BS14 && ac >= 0 && ac < BS14 && board[ar][ac] === player) return false;
+      }
+    }
+    const isFirst = !board.some(row => row.some(v => v === player));
+    if (isFirst) {
+      const m = BS14 - 1;
+      const corners = [[0,0],[0,m],[m,m],[m,0]];
+      const [sr, sc] = corners[player];
+      return cells.some(([r, c]) => r === sr && c === sc);
+    }
+    return cells.some(([r, c]) => {
+      const diag = [[r-1,c-1],[r-1,c+1],[r+1,c-1],[r+1,c+1]];
+      return diag.some(([dr, dc]) => dr >= 0 && dr < BS14 && dc >= 0 && dc < BS14 && board[dr][dc] === player);
+    });
+  }
+  const b14 = makeBoard14();
+  assert('14x14 P0コーナー[0,0]に配置OK', canPlace14(b14, 0, [[0,0]], 0, 0));
+  assert('14x14 P1コーナー[0,13]に配置OK', canPlace14(b14, 1, [[0,0]], 0, 13));
+  assert('14x14 P2コーナー[13,13]に配置OK', canPlace14(b14, 2, [[0,0]], 13, 13));
+  assert('14x14 P3コーナー[13,0]に配置OK', canPlace14(b14, 3, [[0,0]], 13, 0));
+  assert('14x14 ボード外[0,14]はNG', !canPlace14(b14, 0, [[0,0]], 0, 14));
+  assert('14x14 ボード外[14,0]はNG', !canPlace14(b14, 0, [[0,0]], 14, 0));
+}
+
 // ===== 結果 =====
 console.log(`\n${'='.repeat(40)}`);
 if (fail === 0) {
