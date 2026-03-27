@@ -146,23 +146,23 @@ canvas#board { display: block; touch-action: none; }
   <h1>KADO</h1>
   <p>CONNECT BY CORNERS</p>
   <div id="main-menu">
-    <button id="continue-btn" class="start-btn" style="display:none;" onclick="resumeGame()">
+    <button id="continue-btn" class="start-btn" style="display:none;">
       CONTINUE
       <span class="sub">Resume saved game</span>
     </button>
-    <button class="start-btn" onclick="showBoardSizeSelect('cpu')">
+    <button id="btn-vs-cpu" class="start-btn">
       1P vs CPU
       <span class="sub">Play against AI</span>
     </button>
-    <button class="start-btn" onclick="showBoardSizeSelect('local')">
+    <button id="btn-local-4p" class="start-btn">
       LOCAL 4P
       <span class="sub">Pass & Play</span>
     </button>
-    <button class="start-btn" onclick="showRules()">
+    <button id="btn-rules" class="start-btn">
       HOW TO PLAY
       <span class="sub">Learn the rules</span>
     </button>
-    <button class="start-btn" onclick="showStats()">
+    <button id="btn-stats" class="start-btn">
       RECORDS
       <span class="sub">View match history</span>
     </button>
@@ -170,28 +170,28 @@ canvas#board { display: block; touch-action: none; }
   <div id="board-size-screen" style="display:none;">
     <h2>SELECT BOARD SIZE</h2>
     <p>Choose your battlefield</p>
-    <button class="start-btn" onclick="confirmBoardSize(14)">
+    <button id="btn-size-14" class="start-btn">
       14 × 14
       <span class="sub">Quick Game · 12 pieces</span>
     </button>
-    <button class="start-btn" onclick="confirmBoardSize(20)">
+    <button id="btn-size-20" class="start-btn">
       20 × 20
       <span class="sub">Standard · 21 pieces</span>
     </button>
-    <button class="start-btn" onclick="confirmBoardSize(24)">
+    <button id="btn-size-24" class="start-btn">
       24 × 24
       <span class="sub">Deep Strategy · 28 pieces</span>
     </button>
-    <button class="start-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);" onclick="hideBoardSizeSelect()">BACK</button>
+    <button id="btn-size-back" class="start-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);">BACK</button>
   </div>
   <div id="order-select">
     <h2>SELECT YOUR POSITION</h2>
     <p>Each corner is a start position</p>
-    <button class="order-btn" onclick="selectOrder(0)">1st<span class="corner-label">Top-Left Corner</span></button>
-    <button class="order-btn" onclick="selectOrder(1)">2nd<span class="corner-label">Top-Right Corner</span></button>
-    <button class="order-btn" onclick="selectOrder(2)">3rd<span class="corner-label">Bottom-Right Corner</span></button>
-    <button class="order-btn" onclick="selectOrder(3)">4th<span class="corner-label">Bottom-Left Corner</span></button>
-    <button class="order-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);margin-top:8px;" onclick="hideOrderSelect()">BACK</button>
+    <button id="btn-order-0" class="order-btn">1st<span class="corner-label">Top-Left Corner</span></button>
+    <button id="btn-order-1" class="order-btn">2nd<span class="corner-label">Top-Right Corner</span></button>
+    <button id="btn-order-2" class="order-btn">3rd<span class="corner-label">Bottom-Right Corner</span></button>
+    <button id="btn-order-3" class="order-btn">4th<span class="corner-label">Bottom-Left Corner</span></button>
+    <button id="btn-order-back" class="order-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);margin-top:8px;">BACK</button>
   </div>
   <div id="char-select">
     <h2>CHOOSE YOUR OPPONENTS</h2>
@@ -199,8 +199,8 @@ canvas#board { display: block; touch-action: none; }
     <div class="char-slot-label" id="char-slot-label"></div>
     <div class="char-grid" id="char-grid"></div>
     <div style="display:flex;gap:8px;margin-top:8px;justify-content:center;">
-      <button class="order-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);width:auto;padding:10px 20px;" onclick="charSelectBack()">BACK</button>
-      <button class="order-btn" id="char-start-btn" style="background:transparent;border:1px solid #e94560;color:#e94560;width:auto;padding:10px 20px;display:none;" onclick="confirmCharSelect()">START!</button>
+      <button id="btn-char-back" class="order-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);width:auto;padding:10px 20px;">BACK</button>
+      <button class="order-btn" id="char-start-btn" style="background:transparent;border:1px solid #e94560;color:#e94560;width:auto;padding:10px 20px;display:none;">START!</button>
     </div>
   </div>
   <a class="feedback-link" href="https://github.com/tetutetu214/blokus-game/issues" target="_blank">Bug Reports & Feedback</a>
@@ -211,7 +211,7 @@ canvas#board { display: block; touch-action: none; }
   <div id="header">
     <h1>KADO</h1>
     <span id="turn-indicator">● P1</span>
-    <button id="score-btn" onclick="showScores()">SCORE</button>
+    <button id="score-btn">SCORE</button>
   </div>
   <div id="stats-bar"></div>
   <div id="board-container">
@@ -223,24 +223,24 @@ canvas#board { display: block; touch-action: none; }
   </div>
   <div id="piece-panel">
     <div id="piece-controls">
-      <button class="icon-btn" onclick="rotatePiece()">↻</button>
-      <button class="icon-btn" onclick="flipPiece()">↔</button>
-      <button id="deselect-btn" onclick="deselectPiece()">×</button>
-      <button id="undo-btn" onclick="undoMove()" disabled>UNDO</button>
-      <button id="pass-btn" onclick="passTurn()">PASS</button>
-      <button id="quit-btn" onclick="quitToTitle()">HOME</button>
+      <button id="rotate-btn" class="icon-btn">↻</button>
+      <button id="flip-btn" class="icon-btn">↔</button>
+      <button id="deselect-btn">×</button>
+      <button id="undo-btn" disabled>UNDO</button>
+      <button id="pass-btn">PASS</button>
+      <button id="quit-btn">HOME</button>
     </div>
     <div id="viewing-label">← Viewing <span></span> pieces (tap to return)</div>
     <div id="piece-list"></div>
   </div>
 </div>
 
-<div id="modal-overlay" onclick="closeModal()">
-  <div id="modal" onclick="event.stopPropagation()">
+<div id="modal-overlay">
+  <div id="modal">
     <h2 id="modal-title">SCORE</h2>
     <div id="modal-body"></div>
-    <button onclick="closeModal()">CLOSE</button>
-    <button id="restart-btn" style="display:none;margin-left:8px;" onclick="backToTitle()">TITLE</button>
+    <button id="modal-close-btn">CLOSE</button>
+    <button id="restart-btn" style="display:none;margin-left:8px;">TITLE</button>
   </div>
 </div>
 
@@ -1620,44 +1620,72 @@ window.addEventListener('orientationchange', () => {
   }, 100);
 });
 
-// Expose functions to window for onclick handlers
-window.rotatePiece = rotatePiece;
-window.flipPiece = flipPiece;
-window.deselectPiece = deselectPiece;
-window.undoMove = undoMove;
-window.passTurn = passTurn;
-window.quitToTitle = quitToTitle;
-window.resumeGame = resumeGame;
-window.showOrderSelect = showOrderSelect;
-window.hideOrderSelect = hideOrderSelect;
-window.selectOrder = selectOrder;
-window.confirmCharSelect = confirmCharSelect;
-window.charSelectBack = charSelectBack;
-window.showBoardSizeSelect = showBoardSizeSelect;
-window.hideBoardSizeSelect = hideBoardSizeSelect;
-window.confirmBoardSize = confirmBoardSize;
-window.startGame = startGame;
-window.showRules = showRules;
-window.hideRules = hideRules;
-window.showStats = showStats;
-window.hideStats = hideStats;
-window.resetStats = resetStats;
-window.closeModal = closeModal;
-window.backToTitle = backToTitle;
-window.showScores = showScores;
-window.toggleViewPlayer = toggleViewPlayer;
+// ===== Event Listeners =====
+function setupEventListeners() {
+  // Start screen
+  document.getElementById('continue-btn').addEventListener('click', resumeGame);
+  document.getElementById('btn-vs-cpu').addEventListener('click', function() { showBoardSizeSelect('cpu'); });
+  document.getElementById('btn-local-4p').addEventListener('click', function() { showBoardSizeSelect('local'); });
+  document.getElementById('btn-rules').addEventListener('click', showRules);
+  document.getElementById('btn-stats').addEventListener('click', showStats);
+
+  // Board size select
+  document.getElementById('btn-size-14').addEventListener('click', function() { confirmBoardSize(14); });
+  document.getElementById('btn-size-20').addEventListener('click', function() { confirmBoardSize(20); });
+  document.getElementById('btn-size-24').addEventListener('click', function() { confirmBoardSize(24); });
+  document.getElementById('btn-size-back').addEventListener('click', hideBoardSizeSelect);
+
+  // Order select
+  document.getElementById('btn-order-0').addEventListener('click', function() { selectOrder(0); });
+  document.getElementById('btn-order-1').addEventListener('click', function() { selectOrder(1); });
+  document.getElementById('btn-order-2').addEventListener('click', function() { selectOrder(2); });
+  document.getElementById('btn-order-3').addEventListener('click', function() { selectOrder(3); });
+  document.getElementById('btn-order-back').addEventListener('click', hideOrderSelect);
+
+  // Char select
+  document.getElementById('btn-char-back').addEventListener('click', charSelectBack);
+  document.getElementById('char-start-btn').addEventListener('click', confirmCharSelect);
+
+  // Game controls
+  document.getElementById('rotate-btn').addEventListener('click', rotatePiece);
+  document.getElementById('flip-btn').addEventListener('click', flipPiece);
+  document.getElementById('deselect-btn').addEventListener('click', deselectPiece);
+  document.getElementById('undo-btn').addEventListener('click', undoMove);
+  document.getElementById('pass-btn').addEventListener('click', passTurn);
+  document.getElementById('quit-btn').addEventListener('click', quitToTitle);
+  document.getElementById('score-btn').addEventListener('click', showScores);
+
+  // Modal
+  document.getElementById('modal-overlay').addEventListener('click', closeModal);
+  document.getElementById('modal').addEventListener('click', function(e) { e.stopPropagation(); });
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+  document.getElementById('restart-btn').addEventListener('click', backToTitle);
+
+  // Stats overlay
+  document.getElementById('stats-overlay').addEventListener('click', hideStats);
+  document.getElementById('stats-modal').addEventListener('click', function(e) { e.stopPropagation(); });
+  document.getElementById('stats-close-btn').addEventListener('click', hideStats);
+  document.getElementById('stats-reset-btn').addEventListener('click', resetStats);
+
+  // Rules overlay
+  document.getElementById('rules-overlay').addEventListener('click', hideRules);
+  document.getElementById('rules-modal').addEventListener('click', function(e) { e.stopPropagation(); });
+  document.getElementById('rules-close-btn').addEventListener('click', hideRules);
+}
+
+setupEventListeners();
 </script>
-<div id="stats-overlay" onclick="hideStats()">
-  <div id="stats-modal" onclick="event.stopPropagation()">
+<div id="stats-overlay">
+  <div id="stats-modal">
     <h2>RECORDS</h2>
     <div id="stats-body"></div>
-    <button class="stats-close" onclick="hideStats()">CLOSE</button>
-    <button class="stats-reset" onclick="resetStats()">RESET RECORDS</button>
+    <button id="stats-close-btn" class="stats-close">CLOSE</button>
+    <button id="stats-reset-btn" class="stats-reset">RESET RECORDS</button>
   </div>
 </div>
 
-<div id="rules-overlay" onclick="hideRules()">
-  <div id="rules-modal" onclick="event.stopPropagation()">
+<div id="rules-overlay">
+  <div id="rules-modal">
     <h2>HOW TO PLAY</h2>
     <h3>OBJECTIVE</h3>
     <p>Place as many pieces as possible on the board!<br>Fewer remaining squares = higher score.</p>
@@ -1677,7 +1705,7 @@ window.toggleViewPlayer = toggleViewPlayer;
     </ul>
     <h3>SCORING</h3>
     <p>Remaining squares × -1 point<br>All pieces placed = +15 bonus!</p>
-    <button class="rules-close" onclick="hideRules()">CLOSE</button>
+    <button id="rules-close-btn" class="rules-close">CLOSE</button>
   </div>
 </div>
 </body>
