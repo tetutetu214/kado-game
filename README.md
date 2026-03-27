@@ -1,107 +1,125 @@
-# KADO - 角でつなぐボードゲーム
+# KADO - Connect by Corners
 
-iPhone / スマホ / PC で遊べるポリオミノ戦略ボードゲームです。
-外部ライブラリ不要、HTMLファイル1つで動作します。
+A polyomino strategy board game playable on iPhone / smartphone / PC.
+No external libraries required.
 
 GitHub Pages: https://tetutetu214.github.io/blokus-game/
 
-## 遊び方
+## How to Play
 
-### ゲームモード
+### Game Modes
 
-| モード | 説明 |
-|--------|------|
-| 1人 vs CPU | あなた vs 個性豊かなCPU3体 |
-| 4人対戦 | ローカルマルチプレイ（1台で交代） |
+| Mode | Description |
+|------|-------------|
+| 1P vs CPU | You vs 3 CPU opponents |
+| LOCAL 4P | Local multiplayer (pass & play) |
 
-CPU対戦では手番（1番手〜4番手）と対戦相手キャラクター（10体から3体選択）を選べます。
+### Board Sizes
 
-### キャラクター一覧
+| Size | Pieces per player | Coverage | Style |
+|------|------------------|----------|-------|
+| 14×14 | 12 (n=1-4 + 3 pentominoes) | 90% | Quick Game |
+| 20×20 | 21 (n=1-5, standard) | 89% | Standard |
+| 24×24 | 28 (n=1-5 + 7 hexominoes) | 91% | Deep Strategy |
 
-10体のキャラクターから対戦相手を自由に選べます（同じキャラも選択可能）。
+### Characters
 
-| Rank | キャラ | キャッチコピー |
-|------|--------|---------------|
-| 1 | 🐉 ドラゴン | 隙なき最強の支配者 |
-| 2 | 🏰 フォートレス | 鉄壁にわずかな綻び |
-| 3 | 👿 デーモン | 実力はあるが気まぐれ |
-| 4 | ⚔️ ナイト | 堅実な中堅戦士 |
-| 5 | 🛡️ シールド | 守りは固いがムラがある |
-| 6 | 🃏 ジョーカー | 何をしてくるか読めない |
-| 7 | 🔥 スライム | 元気だけが取り柄 |
-| 8 | 🐢 カメ | のんびり屋のマイペース |
-| 9 | 🪙 コイン | 表か裏かは運次第 |
-| 10 | 🐣 ヒヨコ | はじめてのおつかい |
+9 CPU characters with unique 16-bit pixel art. Choose any 3 as opponents (duplicates OK).
 
-Rankが小さいほど強く、同じRank帯でもプレイスタイルが異なります。
+| Rank | Name | Type | Caption |
+|------|------|------|---------|
+| 1 | BLAZE | ATK | Relentless force |
+| 2 | AEGIS | DEF | Unbreakable wall |
+| 3 | CHAOS | RNG | Brilliant madness |
+| 4 | SPIKE | ATK | Sharp striker |
+| 5 | PROXY | DEF | Steady shield |
+| 6 | GLITCH | RNG | Unpredictable |
+| 7 | EMBER | ATK | Fading spark |
+| 8 | ECHO | DEF | Faint signal |
+| 9 | FLICKER | RNG | Static noise |
 
-### 操作方法
+Rank 1 = strongest. Within the same type, color intensity indicates strength.
 
-1. 画面下のピース一覧からピースをタップして選択
-2. **↻** で回転、**↔** で反転
-3. ボード上をタップして配置（置ける場所にドットが表示されます）
-4. **戻す** で直前の1手を取り消し
-5. 置けるピースがない場合は自動でパスされます（トースト通知あり）
-6. **🏠** ボタンでゲームを保存してタイトルに戻れます
+### Controls
 
-### スマホ操作
+1. Select a piece from the panel below
+2. **↻** Rotate / **↔** Flip
+3. Tap the board to place (dots show valid positions)
+4. **UNDO** to take back your last move
+5. Auto-pass when no valid moves (toast notification)
+6. **HOME** to save and return to title
 
-- タップで即配置
-- ドラッグでゴースト（影）を表示しながら配置位置を調整
+### Rules
 
-### PC操作
+- Each player has a set of polyomino pieces
+- First piece must touch your **corner**
+- Subsequent pieces must connect **corner-to-corner** with your own
+- Your pieces must **never share an edge**
+- Touching other players' edges is OK
+- Game ends when all players pass
 
-- マウスホバーでゴースト（影）をプレビュー
-- クリックで配置
+### Scoring
 
-### ルール
+- Remaining squares × -1 point
+- All pieces placed = **+15 bonus**
+- Highest score wins
 
-- 各プレイヤーは21種類のピース（1〜5マス）を持つ
-- 最初のピースは自分のコーナー（角）に置く
-- 2手目以降は、自分の既存ピースと **角で接する** 位置に置く
-- 自分のピース同士は **辺で接してはいけない**
-- 全員が置けなくなったらゲーム終了
+## Features
 
-### スコア
+- **3 Board Sizes**: 14×14 / 20×20 / 24×24 with mathematically balanced piece sets
+- **9 CPU Characters**: Pixel art opponents with ATK/DEF/RNG personality axes
+- **Per-Character Records**: Win rate and average score tracked per opponent
+- **Match History**: Last 10 games rank/score graph
+- **Save & Resume**: Browser saves game state automatically
+- **Undo**: Take back your last placement
+- **Auto Pass**: Automatic pass with notification when no moves available
+- **Placement Dots**: Only valid corners are highlighted
+- **All-CPU Highlight**: See where every CPU placed in the last round
+- **Ghost Preview**: Hover (PC) or drag (mobile) to preview placement
+- **Neon Arcade UI**: 90s arcade / pinball aesthetic with glow effects
 
-- 置けなかったピースのマス数がマイナス点
-- 全ピース配置で **+15ボーナス**
-- スコアが最も高いプレイヤーの勝ち
-
-## 主な機能
-
-- **10体のCPUキャラクター**: Rank 1〜10の個性豊かな対戦相手
-- **戦績記録**: 対戦結果をブラウザに保存・閲覧
-- **途中保存・再開**: ブラウザを閉じても「つづきから」で再開可能
-- **1手戻し（Undo）**: 直前の配置を取り消し
-- **自動パス**: 置けるピースがない場合に自動パス＋通知表示
-- **配置可能ドット**: 実際に置ける角のみにドットを表示
-- **全CPUハイライト**: 直前ラウンドの全CPUの配置を強調表示
-- **相手ピース確認**: ステータスバーをタップして他プレイヤーの残りピースを確認
-- **ルール説明**: タイトル画面から「遊び方」で確認可能
-- **ゴーストプレビュー**: 配置前にピースの影を表示
-
-## 実行方法
+## Architecture
 
 ```
-index.html をブラウザで開く
+index.html          ← HTML + CSS + UI logic (ES module)
+js/
+  game-logic.js     ← Pure game logic (no DOM dependencies)
+  test-logic.js     ← Module unit tests (32 tests)
+test.js             ← Legacy integration tests (79 tests)
 ```
 
-サーバー不要。ファイルをダブルクリック、またはGitHub Pagesで直接プレイできます。
+Game logic is separated from UI for testability and future iOS app reuse.
 
-## テスト
+## Running Locally
+
+ES modules require a web server (file:// won't work):
 
 ```bash
-node test.js
+# Python
+python3 -m http.server 9000
+
+# Node.js
+npx serve
 ```
 
-56件のユニットテスト（回転・反転・配置ルール・スコア計算・ピース定義の検証）を実行します。
+Then open http://localhost:9000
 
-## 技術仕様
+## Tests
 
-- HTML / CSS / JavaScript（単一ファイル）
-- Canvas API でボード描画
-- タッチ操作対応（iPhone Safari / Android Chrome）
-- マウスホバープレビュー対応（PC）
-- localStorage によるゲーム保存・戦績記録
-- CPU AI: キャラクター別の重み付きスコアリング（攻撃・防御・ランダム性の3軸）
+```bash
+# Integration tests
+node test.js        # 79 tests
+
+# Module unit tests
+node js/test-logic.js   # 32 tests
+```
+
+## Tech Stack
+
+- HTML / CSS / JavaScript (ES modules)
+- Canvas API for board rendering
+- Touch events (iPhone Safari / Android Chrome)
+- Mouse hover preview (PC)
+- localStorage for game saves & match records
+- CPU AI: Weighted scoring with ATK/DEF/RNG personality system
+- Colorblind-friendly palette (CUD compliant)
