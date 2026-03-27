@@ -1088,7 +1088,7 @@ function resumeGame() {
         players.push({ id: i, name: 'YOU', ...colors[i] });
       } else {
         const ch = cpuCharacters[cpuIdx];
-        const cpuName = ch ? ch.emoji + ch.name : 'CPU' + (cpuIdx + 1);
+        const cpuName = ch ? ch.name : 'CPU' + (cpuIdx + 1);
         players.push({ id: i, name: cpuName, ...colors[i] });
         cpuIdx++;
       }
@@ -1310,7 +1310,7 @@ function startGame(mode) {
         players.push({ id: i, name: 'YOU', ...colors[i] });
       } else {
         const ch = cpuCharacters[cpuIdx];
-        const cpuName = ch ? ch.emoji + ch.name : 'CPU' + (cpuIdx + 1);
+        const cpuName = ch ? ch.name : 'CPU' + (cpuIdx + 1);
         players.push({ id: i, name: cpuName, ...colors[i] });
         cpuIdx++;
       }
@@ -1348,6 +1348,7 @@ function initGame() {
     }
   }
 
+  syncGameState();
   updateTurnIndicator();
   resizeBoard();
   updatePieceList();
