@@ -1623,12 +1623,13 @@ function initGame() {
 function loadStats() {
   try {
     const json = localStorage.getItem('kado_stats');
-    if (!json) return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [] };
+    if (!json) return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [], charStats: {} };
     const stats = JSON.parse(json);
     if (!stats.history) stats.history = [];
+    if (!stats.charStats) stats.charStats = {};
     return stats;
   } catch(e) {
-    return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [] };
+    return { games: 0, wins: 0, ranks: [0,0,0,0], bestScore: null, totalScore: 0, history: [], charStats: {} };
   }
 }
 
@@ -1654,6 +1655,16 @@ function recordGameResult() {
   stats.totalScore += myScore;
   stats.history.push({ score: myScore, rank: rank + 1 });
   if (stats.history.length > 10) stats.history = stats.history.slice(-10);
+  // Record per-character stats
+  var won = (rank === 0);
+  for (var ci = 0; ci < cpuCharacters.length; ci++) {
+    var ch = cpuCharacters[ci];
+    if (!ch) continue;
+    if (!stats.charStats[ch.id]) stats.charStats[ch.id] = { games: 0, wins: 0, totalScore: 0 };
+    stats.charStats[ch.id].games++;
+    if (won) stats.charStats[ch.id].wins++;
+    stats.charStats[ch.id].totalScore += myScore;
+  }
   saveStats(stats);
 }
 
@@ -1723,6 +1734,38 @@ function showStats() {
     ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
     points.forEach((p, i) => {
       ctx.fillText(i + 1, p.x, h - padB + 14);
+    });
+  }
+  // Character-specific win rates
+  var charIds = CPU_CHARACTERS.map(function(c) { return c.id; });
+  var hasCharData = charIds.some(function(id) { return stats.charStats[id] && stats.charStats[id].games > 0; });
+  if (hasCharData) {
+    var charTitle = document.createElement('div');
+    charTitle.style.cssText = 'margin-top:16px;font-size:14px;color:#aaa;text-align:center;margin-bottom:8px;';
+    charTitle.textContent = 'VS Character Records';
+    body.appendChild(charTitle);
+    CPU_CHARACTERS.forEach(function(ch) {
+      var cs = stats.charStats[ch.id];
+      if (!cs || cs.games === 0) return;
+      var winRate = Math.round(cs.wins / cs.games * 100);
+      var avgScore = Math.round(cs.totalScore / cs.games);
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:12px;color:#ccc;';
+      // Pixel art icon
+      var cvs = document.createElement('canvas');
+      cvs.width = 16; cvs.height = 16;
+      cvs.style.cssText = 'width:16px;height:16px;image-rendering:pixelated;flex-shrink:0;';
+      drawCharPixelArt(cvs, ch.id);
+      row.appendChild(cvs);
+      var nameEl = document.createElement('span');
+      nameEl.style.cssText = 'width:60px;text-align:left;font-weight:bold;color:#eee;';
+      nameEl.textContent = ch.name;
+      row.appendChild(nameEl);
+      var detailEl = document.createElement('span');
+      detailEl.style.cssText = 'flex:1;text-align:right;color:#aaa;';
+      detailEl.textContent = cs.wins + 'W ' + (cs.games - cs.wins) + 'L (' + winRate + '%) avg ' + avgScore + 'pt';
+      row.appendChild(detailEl);
+      body.appendChild(row);
     });
   }
   document.getElementById('stats-overlay').classList.add('show');
