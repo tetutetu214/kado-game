@@ -1261,8 +1261,18 @@ function pickCharacter(charIdx) {
 }
 
 function confirmCharSelect() {
-  document.getElementById('char-select').style.display = 'none';
-  startGame('cpu');
+  // Flash selected cards with white glow before starting
+  var cards = document.querySelectorAll('#char-grid .char-card');
+  cards.forEach(function(card) {
+    card.style.borderColor = '#fff';
+    card.style.boxShadow = '0 0 20px rgba(255,255,255,0.5)';
+  });
+  document.getElementById('char-start-btn').disabled = true;
+  setTimeout(function() {
+    document.getElementById('char-select').style.display = 'none';
+    document.getElementById('char-start-btn').disabled = false;
+    startGame('cpu');
+  }, 600);
 }
 
 let selectedBoardSize = 20;
