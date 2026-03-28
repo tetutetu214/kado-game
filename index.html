@@ -966,11 +966,13 @@ function showScores() {
   });
   body.appendChild(div);
   document.getElementById('modal-title').textContent = 'SCORE';
+  document.getElementById('modal-close-btn').style.display = state.gameOver ? 'none' : '';
   document.getElementById('restart-btn').style.display = state.gameOver ? 'inline-block' : 'none';
   document.getElementById('modal-overlay').classList.add('show');
 }
 
 function closeModal() {
+  if (state.gameOver) return; // Game over: must use TITLE button
   document.getElementById('modal-overlay').classList.remove('show');
 }
 
@@ -989,6 +991,7 @@ function endGame() {
     title = players[winner].name + ' WINS!';
   }
   document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-close-btn').style.display = 'none';
   document.getElementById('restart-btn').style.display = 'inline-block';
 
   const body = document.getElementById('modal-body');
