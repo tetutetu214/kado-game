@@ -76,7 +76,6 @@ canvas#board { display: block; touch-action: none; }
 .start-btn:active { background: rgba(233,69,96,0.3); border-color: #e94560; box-shadow: 0 0 25px rgba(233,69,96,0.5), inset 0 0 15px rgba(233,69,96,0.15); }
 .start-btn .sub { font-size: 9px; color: #556; display: block; margin-top: 4px; letter-spacing: 1px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
 #main-menu { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.feedback-link { font-size: 12px; color: #888; text-decoration: none; margin-top: 8px; }
 #rules-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
 #rules-overlay.show { display: flex; }
 #rules-modal { background: #0d1528; border: 1px solid rgba(233,69,96,0.3); border-radius: 4px; padding: 20px; max-width: 360px; width: 90%; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 0 30px rgba(233,69,96,0.15); }
@@ -108,7 +107,6 @@ canvas#board { display: block; touch-action: none; }
 #stats-modal .stats-close:hover { background: rgba(233,69,96,0.15); box-shadow: 0 0 20px rgba(233,69,96,0.3); }
 #stats-modal .stats-reset { display: block; margin: 8px auto 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; transition: all 0.2s; }
 #stats-modal .stats-reset:hover { color: #e94560; }
-.feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
 #order-select, #difficulty-select, #char-select { display: none; flex-direction: column; align-items: center; gap: 12px; }
 #order-select h2, #difficulty-select h2, #char-select h2 { font-size: 16px; margin-bottom: 4px; }
 #order-select p, #difficulty-select p, #char-select p { font-size: 12px; color: #aaa; }
@@ -203,7 +201,6 @@ canvas#board { display: block; touch-action: none; }
       <button class="order-btn" id="char-start-btn" style="background:transparent;border:1px solid #e94560;color:#e94560;width:auto;padding:10px 20px;display:none;">START!</button>
     </div>
   </div>
-  <a class="feedback-link" href="https://github.com/tetutetu214/kado-game/issues" target="_blank">Bug Reports & Feedback</a>
 </div>
 
 <!-- Game Screen -->
