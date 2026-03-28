@@ -93,6 +93,36 @@ test.js             ← 統合テスト（79件）
 
 ゲームロジックはUIから分離。テスト可能で、将来のiOSアプリ移行時にそのまま再利用可能。
 
+## 開発フロー（デプロイ戦略）
+
+### 方針
+mainブランチへの直接pushはしない。ブランチ運用とCloudflare Pagesのプレビュー機能を組み合わせてリスクを低減する。
+
+### フロー
+
+```
+feature/xxxブランチで作業
+        ↓
+feature/xxxにpush
+        ↓
+Cloudflare PagesがプレビューURLを自動生成（本番に影響なし）
+        ↓
+プレビューURLで動作確認
+        ↓
+問題なければmainにマージ → 本番（kado-game.pages.dev）に反映
+```
+
+### ブランチ命名規則
+
+| プレフィックス | 用途 | 例 |
+|---|---|---|
+| `feature/` | 新機能追加 | `feature/bmc-widget` |
+| `fix/` | バグ修正 | `fix/endgame-rank` |
+| `docs/` | ドキュメント更新 | `docs/readme-update` |
+
+### なぜこの構成か
+GitHub Actionsを使わずにCI/CDに近い安全性を実現している。Cloudflare Pagesはmainブランチ以外へのpushに対して自動でプレビューデプロイを行う機能を持っており、テスト環境として活用できる。
+
 ## ローカルでの実行
 
 ES modulesを使用しているため、HTTPサーバー経由で開く必要があります（file://では動作しません）：
