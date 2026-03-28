@@ -516,38 +516,57 @@ function flipPiece() {
   }
 }
 
+// Web Worker for CPU AI (separate thread)
+const cpuWorker = new Worker('./js/worker.js', { type: 'module' });
+
+cpuWorker.onmessage = function(e) {
+  const move = e.data;
+  if (move) {
+    placePiece(state.currentPlayer, move.shape, move.br, move.bc);
+    state.playerPieces[state.currentPlayer][move.idx].used = true;
+    state.passCount = 0;
+  } else {
+    state.playerPassed[state.currentPlayer] = true;
+    state.passCount++;
+  }
+
+  cpuThinking = false;
+  document.getElementById('cpu-thinking').style.display = 'none';
+  saveGame();
+
+  if (state.passCount >= 4 || checkAllPassed()) {
+    endGame();
+    return;
+  }
+
+  nextTurn();
+};
+
 function executeCpuTurn() {
   if (state.gameOver || !isCpuPlayer(state.currentPlayer)) return;
 
   cpuThinking = true;
   document.getElementById('cpu-thinking').style.display = 'block';
 
-  // Use setTimeout to allow UI to update
-  setTimeout(() => {
-    const ch = getCpuCharacter(state.currentPlayer);
-    const params = getCpuParams(ch);
-    const move = cpuMoveLogic(state.currentPlayer, params);
-    if (move) {
-      placePiece(state.currentPlayer, move.shape, move.br, move.bc);
-      state.playerPieces[state.currentPlayer][move.idx].used = true;
-      state.passCount = 0;
+  const ch = getCpuCharacter(state.currentPlayer);
+  const params = getCpuParams(ch);
 
-    } else {
-      state.playerPassed[state.currentPlayer] = true;
-      state.passCount++;
-    }
-
-    cpuThinking = false;
-    document.getElementById('cpu-thinking').style.display = 'none';
-    saveGame();
-
-    if (state.passCount >= 4 || checkAllPassed()) {
-      endGame();
-      return;
-    }
-
-    nextTurn();
-  }, 300);
+  // Send state snapshot to worker (separate thread)
+  cpuWorker.postMessage({
+    state: {
+      BOARD_SIZE: state.BOARD_SIZE,
+      board: state.board.map(row => [...row]),
+      playerPieces: state.playerPieces.map(pp => pp.map(p => ({ shape: p.shape.map(s => [...s]), used: p.used }))),
+      passCount: state.passCount,
+      gameOver: state.gameOver,
+      playerPassed: [...state.playerPassed],
+      lastPlacedCells: state.lastPlacedCells.map(a => [...a]),
+      humanPlayer: state.humanPlayer,
+      gameMode: state.gameMode,
+    },
+    player: state.currentPlayer,
+    params: params
+  });
 }
 
 function isCpuPlayer(p) {
