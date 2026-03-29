@@ -1254,6 +1254,13 @@ function updateContinueButton() {
 // Show continue button on load
 document.addEventListener('DOMContentLoaded', updateContinueButton);
 
+// iOS Safari ピンチズーム防止（user-scalable=no が無視されるため）
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 // ===== Start / Init =====
 function showOrderSelect() {
   document.getElementById('main-menu').style.display = 'none';
