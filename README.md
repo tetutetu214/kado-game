@@ -3,7 +3,7 @@
 iPhone / スマホ / PC で遊べるポリオミノ戦略ボードゲーム。
 外部ライブラリ不要。
 
-GitHub Pages: https://tetutetu214.github.io/kado-game/
+🎮 Play here: https://tetutetu214.com/game/kado
 
 ## 遊び方
 
