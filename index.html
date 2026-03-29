@@ -128,8 +128,6 @@ canvas#board { display: block; touch-action: none; }
 .feedback-link:hover, .feedback-link:active { color: #e94560; text-decoration: underline; }
 #rules-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
 #rules-overlay.show { display: flex; }
-#tokusho-overlay { display: none; }
-#tokusho-overlay.show { display: flex; }
 #rules-modal { background: #0d1528; border: 1px solid rgba(233,69,96,0.3); border-radius: 4px; padding: 20px; max-width: 360px; width: 90%; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 0 30px rgba(233,69,96,0.15); }
 #rules-modal h2 { text-align: center; font-size: 20px; margin-bottom: 12px; }
 #rules-modal h3 { font-size: 15px; color: #e94560; margin: 14px 0 6px; }
@@ -220,7 +218,7 @@ canvas#board { display: block; touch-action: none; }
       FEEDBACK
       <span class="sub">Bug reports & requests</span>
     </button>
-    <a class="feedback-link" href="#" onclick="event.preventDefault();document.getElementById('tokusho-overlay').classList.add('show')">特定商取引法に基づく表記</a>
+    <a class="feedback-link" href="./tokusho.html" target="_blank">特定商取引法に基づく表記</a>
   </div>
   <div id="board-size-screen" style="display:none;">
     <h2>SELECT BOARD SIZE</h2>
@@ -261,46 +259,6 @@ canvas#board { display: block; touch-action: none; }
 </div>
 
 <!-- 特定商取引法モーダル -->
-<div id="tokusho-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:300;justify-content:center;align-items:center;">
-  <div style="background:#0d1528;border:1px solid rgba(233,69,96,0.3);border-radius:4px;padding:24px;max-width:480px;width:92%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-    <h2 style="text-align:center;font-size:14px;letter-spacing:2px;color:#e94560;margin-bottom:20px;">特定商取引法に基づく表記</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.8;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;white-space:nowrap;vertical-align:top;width:40%;">販売業者</td>
-        <td style="padding:8px 4px;color:#ccc;">稲村鉄平（個人）</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">運営責任者</td>
-        <td style="padding:8px 4px;color:#ccc;">稲村鉄平</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">所在地</td>
-        <td style="padding:8px 4px;color:#ccc;">神奈川県相模原市</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">連絡先</td>
-        <td style="padding:8px 4px;color:#ccc;">tetutetu214.kado@gmail.com</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">販売価格</td>
-        <td style="padding:8px 4px;color:#ccc;">任意支援のみ（ゲーム自体は無料）</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">支払方法</td>
-        <td style="padding:8px 4px;color:#ccc;">クレジットカード（Buy Me a Coffee経由）</td>
-      </tr>
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">支払時期</td>
-        <td style="padding:8px 4px;color:#ccc;">支援時に即時決済</td>
-      </tr>
-      <tr>
-        <td style="padding:8px 4px;color:#888;vertical-align:top;">返品・返金</td>
-        <td style="padding:8px 4px;color:#ccc;">デジタルコンテンツの性質上、原則返金不可。ただし決済エラー等の場合はご連絡ください。</td>
-      </tr>
-    </table>
-    <button onclick="document.getElementById('tokusho-overlay').classList.remove('show')" style="display:block;margin:20px auto 0;background:none;border:1px solid rgba(233,69,96,0.4);color:#e94560;padding:8px 24px;border-radius:4px;font-size:12px;cursor:pointer;letter-spacing:2px;">CLOSE</button>
-  </div>
-</div>
 
 <!-- Game Screen -->
 <div id="app" style="display:none;">
