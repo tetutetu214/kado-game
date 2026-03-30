@@ -174,6 +174,9 @@ canvas#board { display: block; touch-action: none; }
 #auto-pass-toast { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; padding: 14px 28px; border-radius: 14px; font-size: 15px; z-index: 60; text-align: center; animation: fadeInOut 2s ease-in-out; pointer-events: none; }
 #auto-pass-toast .pass-name { font-weight: bold; font-size: 17px; }
 @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; } }
+#battle-menu, #puzzle-menu { flex-direction: column; align-items: center; gap: 16px; }
+#battle-menu h2, #puzzle-menu h2 { font-size: 16px; letter-spacing: 2px; }
+#battle-menu p, #puzzle-menu p { color: #888; font-size: 12px; }
 #board-size-screen { flex-direction: column; align-items: center; gap: 8px; }
 #board-size-screen h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; letter-spacing: 2px; }
 #board-size-screen p { color: #888; font-size: 12px; margin-bottom: 4px; }
@@ -196,6 +199,18 @@ canvas#board { display: block; touch-action: none; }
 #tutorial-hint.show { display: block; }
 #tutorial-hint.error { background: rgba(180,40,60,0.95); }
 #tutorial-hint .hint-ja { font-size: 11px; opacity: 0.85; margin-top: 4px; }
+
+/* Puzzle intro overlay */
+#puzzle-intro-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 300; justify-content: center; align-items: center; }
+#puzzle-intro-overlay.show { display: flex; }
+#puzzle-intro-box { background: #0d1528; border: 1px solid rgba(233,69,96,0.3); border-radius: 8px; padding: 24px; max-width: 480px; width: 92%; max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 0 30px rgba(233,69,96,0.15); }
+#puzzle-intro-box h2 { text-align: center; font-size: 18px; color: #e94560; margin-bottom: 12px; text-shadow: 0 0 10px rgba(233,69,96,0.4); }
+#puzzle-intro-box h3 { font-size: 14px; color: #e94560; margin: 10px 0 4px; }
+#puzzle-intro-box p, #puzzle-intro-box li { font-size: 13px; line-height: 1.6; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+#puzzle-intro-box ul { padding-left: 18px; margin: 4px 0; }
+#puzzle-intro-box .ja { font-size: 12px; color: #999; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin-top: 2px; }
+#puzzle-intro-start-btn { display: block; margin: 16px auto 0; background: transparent; border: 1px solid #e94560; color: #e94560; padding: 10px 28px; border-radius: 4px; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: 'Orbitron', sans-serif; transition: all 0.2s; }
+#puzzle-intro-start-btn:hover { background: rgba(233,69,96,0.15); box-shadow: 0 0 20px rgba(233,69,96,0.3); }
 </style>
 </head>
 <body>
@@ -209,17 +224,13 @@ canvas#board { display: block; touch-action: none; }
       CONTINUE
       <span class="sub">Resume saved game</span>
     </button>
-    <button id="btn-vs-cpu" class="start-btn">
-      1P vs CPU
-      <span class="sub">Play against AI</span>
+    <button id="btn-battle" class="start-btn">
+      BATTLE
+      <span class="sub">Compete against rivals</span>
     </button>
-    <button id="btn-local-4p" class="start-btn">
-      LOCAL 4P
-      <span class="sub">Pass & Play</span>
-    </button>
-    <button id="btn-puzzle" class="start-btn">
-      PERFECT PLACE
-      <span class="sub">Place all pieces on the board</span>
+    <button id="btn-puzzle-menu" class="start-btn">
+      PUZZLE
+      <span class="sub">Solo challenge modes</span>
     </button>
     <button id="btn-tutorial" class="start-btn">
       TUTORIAL
@@ -234,6 +245,28 @@ canvas#board { display: block; touch-action: none; }
       <span class="sub">Bug reports & requests</span>
     </button>
     <a class="feedback-link" href="https://tetutetu214.com/game/kado/legal">特定商取引法に基づく表記</a>
+  </div>
+  <div id="battle-menu" style="display:none;">
+    <h2>BATTLE</h2>
+    <p>Choose your battle mode</p>
+    <button id="btn-vs-cpu" class="start-btn">
+      1P vs CPU
+      <span class="sub">Play against AI</span>
+    </button>
+    <button id="btn-local-4p" class="start-btn">
+      LOCAL 4P
+      <span class="sub">Pass & Play</span>
+    </button>
+    <button id="btn-battle-back" class="start-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);">BACK</button>
+  </div>
+  <div id="puzzle-menu" style="display:none;">
+    <h2>PUZZLE</h2>
+    <p>Challenge yourself</p>
+    <button id="btn-puzzle" class="start-btn">
+      PERFECT PLACE
+      <span class="sub">Place all pieces on the board</span>
+    </button>
+    <button id="btn-puzzle-back" class="start-btn" style="background:transparent;border-color:rgba(85,85,85,0.5);">BACK</button>
   </div>
   <div id="board-size-screen" style="display:none;">
     <h2>SELECT BOARD SIZE</h2>
@@ -1394,7 +1427,7 @@ function showOrderSelect() {
 
 function hideOrderSelect() {
   document.getElementById('order-select').style.display = 'none';
-  document.getElementById('main-menu').style.display = '';
+  document.getElementById('board-size-screen').style.display = 'flex';
 }
 
 function selectOrder(order) {
@@ -1514,6 +1547,26 @@ function confirmCharSelect() {
 let selectedBoardSize = 20;
 let pendingGameMode = 'cpu';
 
+function showBattleMenu() {
+  document.getElementById('main-menu').style.display = 'none';
+  document.getElementById('battle-menu').style.display = 'flex';
+}
+
+function hideBattleMenu() {
+  document.getElementById('battle-menu').style.display = 'none';
+  document.getElementById('main-menu').style.display = 'flex';
+}
+
+function showPuzzleMenu() {
+  document.getElementById('main-menu').style.display = 'none';
+  document.getElementById('puzzle-menu').style.display = 'flex';
+}
+
+function hidePuzzleMenu() {
+  document.getElementById('puzzle-menu').style.display = 'none';
+  document.getElementById('main-menu').style.display = 'flex';
+}
+
 function showBoardSizeSelect(mode) {
   pendingGameMode = mode;
   document.getElementById('main-menu').style.display = 'none';
@@ -1532,7 +1585,11 @@ function showBoardSizeSelect(mode) {
 
 function hideBoardSizeSelect() {
   document.getElementById('board-size-screen').style.display = 'none';
-  document.getElementById('main-menu').style.display = 'flex';
+  if (pendingGameMode === 'puzzle') {
+    document.getElementById('puzzle-menu').style.display = 'flex';
+  } else {
+    document.getElementById('battle-menu').style.display = 'flex';
+  }
 }
 
 function confirmBoardSize(size) {
@@ -1594,6 +1651,12 @@ function initGame() {
   updateTurnIndicator();
   resizeBoard();
   updatePieceList();
+
+  // Show puzzle intro overlay
+  if (state.gameMode === 'puzzle') {
+    document.getElementById('puzzle-intro-overlay').classList.add('show');
+    return;
+  }
 
   // If first player is CPU, start their turn
   if (isCpuPlayer(state.currentPlayer) && !state.gameOver) {
@@ -1811,6 +1874,8 @@ function quitToTitle() {
   document.querySelector('#start-screen > h1').style.display = '';
   document.querySelector('#start-screen > p').style.display = '';
   document.getElementById('main-menu').style.display = 'flex';
+  document.getElementById('battle-menu').style.display = 'none';
+  document.getElementById('puzzle-menu').style.display = 'none';
   hideOrderSelect();
   document.getElementById('char-select').style.display = 'none';
   const save = loadGame();
@@ -1828,6 +1893,8 @@ function backToTitle() {
   document.querySelector('#start-screen > h1').style.display = '';
   document.querySelector('#start-screen > p').style.display = '';
   document.getElementById('main-menu').style.display = 'flex';
+  document.getElementById('battle-menu').style.display = 'none';
+  document.getElementById('puzzle-menu').style.display = 'none';
   hideOrderSelect();
   document.getElementById('char-select').style.display = 'none';
 }
@@ -2107,9 +2174,13 @@ function onTutorialPiecePlaced() {
 function setupEventListeners() {
   // Start screen
   document.getElementById('continue-btn').addEventListener('click', resumeGame);
-  document.getElementById('btn-vs-cpu').addEventListener('click', function() { showBoardSizeSelect('cpu'); });
-  document.getElementById('btn-local-4p').addEventListener('click', function() { showBoardSizeSelect('local'); });
-  document.getElementById('btn-puzzle').addEventListener('click', function() { showBoardSizeSelect('puzzle'); });
+  document.getElementById('btn-battle').addEventListener('click', showBattleMenu);
+  document.getElementById('btn-battle-back').addEventListener('click', hideBattleMenu);
+  document.getElementById('btn-vs-cpu').addEventListener('click', function() { hideBattleMenu(); showBoardSizeSelect('cpu'); });
+  document.getElementById('btn-local-4p').addEventListener('click', function() { hideBattleMenu(); showBoardSizeSelect('local'); });
+  document.getElementById('btn-puzzle-menu').addEventListener('click', showPuzzleMenu);
+  document.getElementById('btn-puzzle-back').addEventListener('click', hidePuzzleMenu);
+  document.getElementById('btn-puzzle').addEventListener('click', function() { hidePuzzleMenu(); showBoardSizeSelect('puzzle'); });
   document.getElementById('btn-tutorial').addEventListener('click', startTutorial);
   document.getElementById('btn-stats').addEventListener('click', showStats);
 
@@ -2161,6 +2232,13 @@ function setupEventListeners() {
   });
   document.getElementById('tutorial-overlay').addEventListener('click', function() {}); // prevent click-through
   document.getElementById('tutorial-box').addEventListener('click', function(e) { e.stopPropagation(); });
+
+  // Puzzle intro overlay
+  document.getElementById('puzzle-intro-start-btn').addEventListener('click', function() {
+    document.getElementById('puzzle-intro-overlay').classList.remove('show');
+  });
+  document.getElementById('puzzle-intro-overlay').addEventListener('click', function() {}); // prevent click-through
+  document.getElementById('puzzle-intro-box').addEventListener('click', function(e) { e.stopPropagation(); });
 }
 </script>
 <div id="stats-overlay">
@@ -2180,6 +2258,27 @@ function setupEventListeners() {
   </div>
 </div>
 <div id="tutorial-hint"></div>
+
+<div id="puzzle-intro-overlay">
+  <div id="puzzle-intro-box">
+    <h2>PERFECT PLACE</h2>
+    <div id="puzzle-intro-content">
+      <h3>OBJECTIVE</h3>
+      <p>Place <b>all pieces of all 4 colors</b> on the board.</p>
+      <p class="ja">4色すべてのピースを、1つ残らずボードに配置しましょう。</p>
+      <h3>RULES</h3>
+      <p>Standard 4-player rules apply. You control all 4 colors in turn order.</p>
+      <p class="ja">通常の4人対戦ルールに従います。4色を順番に操作します。</p>
+      <ul>
+        <li>Same-color pieces must connect <b>corner-to-corner</b></li>
+        <li>Same-color pieces must <b>never share an edge</b></li>
+        <li>Different colors <b>may</b> share edges</li>
+      </ul>
+      <p class="ja">同色は角で接続・辺の接触は禁止。異なる色同士は辺の接触OK。</p>
+    </div>
+    <button id="puzzle-intro-start-btn">START</button>
+  </div>
+</div>
 
 </body>
 </html>
