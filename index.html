@@ -1728,7 +1728,7 @@ const TUTORIAL_STEPS = [
   // Step 1: Basic rules - corner start (②)
   {
     type: 'overlay',
-    title: '基本ルール',
+    title: '配置ルール',
     content: `
       <h3>コーナーからスタート</h3>
       <p>最初のピースは盤面の隅（★マーク）に置きます。</p>
@@ -1757,12 +1757,25 @@ const TUTORIAL_STEPS = [
       <p>制限があるのは<b>自分の同色ピース同士</b>だけです。</p>
     `
   },
-  // Step 3: Place first piece on star (④-a)
+  // Step 3: Controls explanation
+  {
+    type: 'overlay',
+    title: '操作方法',
+    content: `
+      <ul>
+        <li>画面下のパネルから<b>ピースを選択</b></li>
+        <li><b>↻</b> 回転 / <b>↔</b> 反転 で向きを変更</li>
+        <li>ボードをタップして配置</li>
+        <li><b>●ドット</b>が置ける場所を示します</li>
+      </ul>
+    `
+  },
+  // Step 4: Place first piece on star (④-a)
   {
     type: 'action',
     hint: '★マークにピースを置いてみましょう！\n下のパネルからピースを選んでタップ'
   },
-  // Step 4: First piece placed! Now explain next placement
+  // Step 5: First piece placed! Now explain next placement
   {
     type: 'overlay',
     title: '最初のピースを置けました！',
@@ -1772,12 +1785,23 @@ const TUTORIAL_STEPS = [
       <p>まずは、わざと辺に接する位置に置いてみてください。<br>（置けないことを確認できます）</p>
     `
   },
-  // Step 5: Try edge NG and then place corner OK (④-b, ④-c)
+  // Step 6: Try edge NG and then place corner OK (④-b, ④-c)
   {
     type: 'action',
     hint: 'ピースを選んで盤面に置いてみましょう\n辺に接する位置→置けない / 角に接する位置→置ける'
   },
-  // Step 6: Strategy hints (⑤)
+  // Step 7: Scoring
+  {
+    type: 'overlay',
+    title: 'スコア',
+    content: `
+      <ul>
+        <li>残ったピースのマス数 × <b>-1点</b></li>
+        <li>全ピース配置で <b>+15ボーナス！</b></li>
+      </ul>
+    `
+  },
+  // Step 8: Strategy hints (⑤)
   {
     type: 'overlay',
     title: '戦略のヒント',
@@ -1788,7 +1812,7 @@ const TUTORIAL_STEPS = [
       </ul>
     `
   },
-  // Step 7: Tutorial complete
+  // Step 9: Tutorial complete
   {
     type: 'overlay',
     title: 'チュートリアル完了！',
@@ -1907,13 +1931,13 @@ function endTutorial() {
 function onTutorialPlacementFailed() {
   if (!tutorialActive) return;
   const step = TUTORIAL_STEPS[tutorialStep];
-  if (step && step.type === 'action' && tutorialStep === 5) {
+  if (step && step.type === 'action' && tutorialStep === 6) {
     tutorialEdgeNgCount++;
     const hint = document.getElementById('tutorial-hint');
     hint.textContent = '辺で接する位置には置けません！\n角（ななめ）で接する位置に置きましょう';
     hint.className = 'show error';
     setTimeout(() => {
-      if (tutorialActive && tutorialStep === 5) {
+      if (tutorialActive && tutorialStep === 6) {
         hint.className = 'show';
         hint.textContent = '●ドットの位置に、角で接するように置きましょう';
       }
