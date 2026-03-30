@@ -185,6 +185,23 @@ canvas#board { display: block; touch-action: none; }
 #board-size-screen { flex-direction: column; align-items: center; gap: 8px; }
 #board-size-screen h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; letter-spacing: 2px; }
 #board-size-screen p { color: #888; font-size: 12px; margin-bottom: 4px; }
+
+/* Tutorial overlay */
+#tutorial-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 300; justify-content: center; align-items: center; }
+#tutorial-overlay.show { display: flex; }
+#tutorial-box { background: #0d1528; border: 1px solid rgba(0,200,150,0.4); border-radius: 8px; padding: 24px; max-width: 360px; width: 90%; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 0 30px rgba(0,200,150,0.2); }
+#tutorial-box h2 { text-align: center; font-size: 18px; color: #00c896; margin-bottom: 12px; text-shadow: 0 0 10px rgba(0,200,150,0.4); }
+#tutorial-box h3 { font-size: 14px; color: #00c896; margin: 12px 0 6px; }
+#tutorial-box p, #tutorial-box li { font-size: 13px; line-height: 1.7; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+#tutorial-box ul { padding-left: 18px; margin: 4px 0; }
+#tutorial-box .tutorial-diagram { background: #0a0a1a; border: 1px solid #333; border-radius: 4px; padding: 8px; margin: 8px 0; text-align: center; font-family: monospace; font-size: 14px; line-height: 1.4; }
+#tutorial-box .ok-label { color: #00c896; font-weight: bold; }
+#tutorial-box .ng-label { color: #e94560; font-weight: bold; }
+#tutorial-next-btn { display: block; margin: 16px auto 0; background: transparent; border: 1px solid #00c896; color: #00c896; padding: 10px 28px; border-radius: 4px; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: 'Orbitron', sans-serif; transition: all 0.2s; }
+#tutorial-next-btn:hover { background: rgba(0,200,150,0.15); box-shadow: 0 0 20px rgba(0,200,150,0.3); }
+#tutorial-hint { display: none; position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(0,200,150,0.9); color: #000; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; z-index: 310; text-align: center; max-width: 320px; box-shadow: 0 0 20px rgba(0,200,150,0.4); }
+#tutorial-hint.show { display: block; }
+#tutorial-hint.error { background: rgba(233,69,96,0.9); }
 </style>
 </head>
 <body>
@@ -205,6 +222,10 @@ canvas#board { display: block; touch-action: none; }
     <button id="btn-local-4p" class="start-btn">
       LOCAL 4P
       <span class="sub">Pass & Play</span>
+    </button>
+    <button id="btn-tutorial" class="start-btn" style="border-color:rgba(0,200,150,0.5);box-shadow:0 0 8px rgba(0,200,150,0.15),inset 0 0 8px rgba(0,200,150,0.05);">
+      TUTORIAL
+      <span class="sub">Learn by playing</span>
     </button>
     <button id="btn-rules" class="start-btn">
       HOW TO PLAY
@@ -757,9 +778,18 @@ canvas.addEventListener('touchend', (e) => {
       ghostPos = null;
       state.passCount = 0;
 
+      if (tutorialActive) {
+        updateTurnIndicator();
+        updatePieceList();
+        drawBoard();
+        onTutorialPiecePlaced();
+        return;
+      }
+
       saveGame();
       nextTurn();
     } else {
+      if (tutorialActive) onTutorialPlacementFailed();
       ghostPos = null;
       drawBoard();
     }
@@ -827,10 +857,21 @@ function handleBoardTap(pos) {
     currentShape = null;
     ghostPos = null;
     state.passCount = 0;
-  
+
+    if (tutorialActive) {
+      updateTurnIndicator();
+      updatePieceList();
+      drawBoard();
+      onTutorialPiecePlaced();
+      return;
+    }
+
     saveGame();
 
     nextTurn();
+  } else {
+    // Placement failed
+    if (tutorialActive) onTutorialPlacementFailed();
   }
   // Do NOT deselect on invalid placement - keep piece selected so user can try again
 }
@@ -896,6 +937,7 @@ function nextTurn() {
 }
 
 function passTurn() {
+  if (tutorialActive) return;
   if (state.gameOver || cpuThinking) return;
   if (isCpuPlayer(state.currentPlayer)) return;
   state.playerPassed[state.currentPlayer] = true;
@@ -1625,6 +1667,10 @@ function hideRules() {
 }
 
 function quitToTitle() {
+  if (tutorialActive) {
+    endTutorial();
+    return;
+  }
   if (!state.gameOver) {
     saveGame();
   }
@@ -1663,12 +1709,238 @@ window.addEventListener('orientationchange', () => {
   }, 100);
 });
 
+// ===== Tutorial System =====
+let tutorialActive = false;
+let tutorialStep = 0;
+let tutorialEdgeNgCount = 0; // Track failed edge attempts
+
+const TUTORIAL_STEPS = [
+  // Step 0: Welcome + game objective (①)
+  {
+    type: 'overlay',
+    title: 'KADOへようこそ！',
+    content: `
+      <h3>ゲームの目的</h3>
+      <p>できるだけ多くのピースを盤面に置きましょう。</p>
+      <p>最後に手元に残ったピースのマス数が<b>少ないほど勝ち</b>です。</p>
+    `
+  },
+  // Step 1: Basic rules - corner start (②)
+  {
+    type: 'overlay',
+    title: '基本ルール',
+    content: `
+      <h3>コーナーからスタート</h3>
+      <p>最初のピースは盤面の隅（★マーク）に置きます。</p>
+      <h3>角（コーナー）接続</h3>
+      <p>2枚目以降は、自分のピースの<b>角と角</b>が接するように置きます。</p>
+      <div class="tutorial-diagram">
+        <span class="ok-label">OK: 角で接続</span><br>
+        ■ □<br>
+        □ ■
+      </div>
+      <h3>辺の接触はNG</h3>
+      <p>自分のピース同士が<b>辺で接するのは禁止</b>です。</p>
+      <div class="tutorial-diagram">
+        <span class="ng-label">NG: 辺で接触</span><br>
+        ■<br>
+        ■
+      </div>
+    `
+  },
+  // Step 2: Opponent pieces (③)
+  {
+    type: 'overlay',
+    title: '相手のピースとの関係',
+    content: `
+      <p>相手の色のピースとは、<b>辺でも角でも自由に接触OK</b>です。</p>
+      <p>制限があるのは<b>自分の同色ピース同士</b>だけです。</p>
+    `
+  },
+  // Step 3: Place first piece on star (④-a)
+  {
+    type: 'action',
+    hint: '★マークにピースを置いてみましょう！\n下のパネルからピースを選んでタップ'
+  },
+  // Step 4: First piece placed! Now explain next placement
+  {
+    type: 'overlay',
+    title: '最初のピースを置けました！',
+    content: `
+      <p>次は<b>角接続</b>を体験しましょう。</p>
+      <p>盤面の <b>●ドット</b> が置ける場所を示しています。</p>
+      <p>まずは、わざと辺に接する位置に置いてみてください。<br>（置けないことを確認できます）</p>
+    `
+  },
+  // Step 5: Try edge NG and then place corner OK (④-b, ④-c)
+  {
+    type: 'action',
+    hint: 'ピースを選んで盤面に置いてみましょう\n辺に接する位置→置けない / 角に接する位置→置ける'
+  },
+  // Step 6: Strategy hints (⑤)
+  {
+    type: 'overlay',
+    title: '戦略のヒント',
+    content: `
+      <ul>
+        <li><b>盤面の中央へ早めに進出</b>しましょう。端に追い詰められると置ける場所がなくなります。</li>
+        <li><b>大きいピースは早めに使う</b>のがコツ。終盤は小さいピースしか入らなくなります。</li>
+      </ul>
+    `
+  },
+  // Step 7: Tutorial complete
+  {
+    type: 'overlay',
+    title: 'チュートリアル完了！',
+    content: `
+      <p>これでKADOの基本はバッチリです。</p>
+      <p>実際の対戦で腕を磨きましょう！</p>
+    `,
+    buttonText: 'タイトルに戻る'
+  }
+];
+
+function startTutorial() {
+  tutorialActive = true;
+  tutorialStep = 0;
+  tutorialEdgeNgCount = 0;
+
+  // Set up a tutorial game: 7x7 board, player 0, only 3 small pieces
+  state.BOARD_SIZE = 7;
+  state.gameMode = 'cpu';
+  state.humanPlayer = 0;
+  selectedBoardSize = 7;
+
+  state.board = Array.from({ length: 7 }, () => Array(7).fill(-1));
+  state.currentPlayer = 0;
+  state.passCount = 0;
+  state.gameOver = false;
+  state.playerPassed = [false, true, true, true]; // CPUs all passed (inactive)
+  state.lastPlacedCells = [[], [], [], []];
+
+  // Give player just 3 simple pieces for the tutorial
+  const tutorialPieces = [
+    { shape: [[0,0],[1,0],[0,1]], used: false },         // L-shape (3 cells)
+    { shape: [[0,0],[1,0],[2,0]], used: false },          // Straight (3 cells)
+    { shape: [[0,0],[0,1],[1,0],[1,1]], used: false }     // Square (4 cells)
+  ];
+  state.playerPieces = [
+    tutorialPieces,
+    [], [], [] // CPUs have no pieces
+  ];
+
+  players = [
+    { id: 0, name: 'YOU', color: '#0072B2', light: '#4da6d9' },
+    { id: 1, name: '-', color: '#F0E442', light: '#f5ed7a' },
+    { id: 2, name: '-', color: '#9467BD', light: '#b394d4' },
+    { id: 3, name: '-', color: '#D55E00', light: '#e8885a' }
+  ];
+
+  // Show game screen
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  // Initialize UI
+  selectedPieceIdx = null;
+  currentShape = null;
+  ghostPos = null;
+  cpuThinking = false;
+  undoState = null;
+  document.getElementById('undo-btn').disabled = true;
+
+  updateTurnIndicator();
+  resizeBoard();
+  updatePieceList();
+
+  // Show first tutorial step
+  showTutorialStep();
+}
+
+function showTutorialStep() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if (!step) return;
+
+  const overlay = document.getElementById('tutorial-overlay');
+  const hint = document.getElementById('tutorial-hint');
+
+  if (step.type === 'overlay') {
+    // Show overlay with explanation
+    hint.classList.remove('show');
+    document.getElementById('tutorial-title').textContent = step.title;
+    document.getElementById('tutorial-content').innerHTML = step.content;
+    const btn = document.getElementById('tutorial-next-btn');
+    btn.textContent = step.buttonText || 'NEXT';
+    overlay.classList.add('show');
+  } else if (step.type === 'action') {
+    // Hide overlay, show hint
+    overlay.classList.remove('show');
+    hint.textContent = step.hint;
+    hint.className = 'show';
+  }
+}
+
+function advanceTutorial() {
+  tutorialStep++;
+  if (tutorialStep >= TUTORIAL_STEPS.length) {
+    endTutorial();
+    return;
+  }
+  showTutorialStep();
+}
+
+function endTutorial() {
+  tutorialActive = false;
+  tutorialStep = 0;
+  document.getElementById('tutorial-overlay').classList.remove('show');
+  document.getElementById('tutorial-hint').classList.remove('show');
+  document.getElementById('tutorial-hint').className = '';
+
+  // Return to title
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'flex';
+  document.querySelector('#start-screen > h1').style.display = '';
+  document.querySelector('#start-screen > p').style.display = '';
+  document.getElementById('main-menu').style.display = 'flex';
+}
+
+// Called when placement fails during tutorial - show edge NG feedback
+function onTutorialPlacementFailed() {
+  if (!tutorialActive) return;
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if (step && step.type === 'action' && tutorialStep === 5) {
+    tutorialEdgeNgCount++;
+    const hint = document.getElementById('tutorial-hint');
+    hint.textContent = '辺で接する位置には置けません！\n角（ななめ）で接する位置に置きましょう';
+    hint.className = 'show error';
+    setTimeout(() => {
+      if (tutorialActive && tutorialStep === 5) {
+        hint.className = 'show';
+        hint.textContent = '●ドットの位置に、角で接するように置きましょう';
+      }
+    }, 2500);
+  }
+}
+
+// Called after successful piece placement during tutorial
+function onTutorialPiecePlaced() {
+  if (!tutorialActive) return;
+
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if (step && step.type === 'action') {
+    // After placement, advance to next step
+    document.getElementById('tutorial-hint').classList.remove('show');
+    document.getElementById('tutorial-hint').className = '';
+    setTimeout(advanceTutorial, 600);
+  }
+}
+
 // ===== Event Listeners =====
 function setupEventListeners() {
   // Start screen
   document.getElementById('continue-btn').addEventListener('click', resumeGame);
   document.getElementById('btn-vs-cpu').addEventListener('click', function() { showBoardSizeSelect('cpu'); });
   document.getElementById('btn-local-4p').addEventListener('click', function() { showBoardSizeSelect('local'); });
+  document.getElementById('btn-tutorial').addEventListener('click', startTutorial);
   document.getElementById('btn-rules').addEventListener('click', showRules);
   document.getElementById('btn-stats').addEventListener('click', showStats);
 
@@ -1714,6 +1986,17 @@ function setupEventListeners() {
   document.getElementById('rules-overlay').addEventListener('click', hideRules);
   document.getElementById('rules-modal').addEventListener('click', function(e) { e.stopPropagation(); });
   document.getElementById('rules-close-btn').addEventListener('click', hideRules);
+
+  // Tutorial overlay
+  document.getElementById('tutorial-next-btn').addEventListener('click', function() {
+    if (tutorialActive && TUTORIAL_STEPS[tutorialStep] && TUTORIAL_STEPS[tutorialStep].buttonText === 'タイトルに戻る') {
+      endTutorial();
+    } else {
+      advanceTutorial();
+    }
+  });
+  document.getElementById('tutorial-overlay').addEventListener('click', function() {}); // prevent click-through
+  document.getElementById('tutorial-box').addEventListener('click', function(e) { e.stopPropagation(); });
 }
 
 setupEventListeners();
@@ -1726,6 +2009,15 @@ setupEventListeners();
     <button id="stats-reset-btn" class="stats-reset">RESET RECORDS</button>
   </div>
 </div>
+
+<div id="tutorial-overlay">
+  <div id="tutorial-box">
+    <h2 id="tutorial-title"></h2>
+    <div id="tutorial-content"></div>
+    <button id="tutorial-next-btn">NEXT</button>
+  </div>
+</div>
+<div id="tutorial-hint"></div>
 
 <div id="rules-overlay">
   <div id="rules-modal">
