@@ -1783,7 +1783,7 @@ const TUTORIAL_STEPS = [
   // Step 4: Place first piece on star (④-a)
   {
     type: 'action',
-    hint: 'Place a piece on the ★ mark!\nSelect a piece from the panel and tap the board.\n★マークにピースを置いてみましょう！'
+    hint: 'Place a piece on the ★ mark!<br>Select a piece from the panel and tap the board.<div class="hint-ja">★マークにピースを置いてみましょう！<br>下のパネルからピースを選んでタップ</div>'
   },
   // Step 5: First piece placed! Now explain next placement
   {
@@ -1800,7 +1800,7 @@ const TUTORIAL_STEPS = [
   // Step 6: Try edge NG and then place corner OK (④-b, ④-c)
   {
     type: 'action',
-    hint: 'Select a piece and try placing it.\nEdge = blocked / Corner = OK!\nピースを選んで置いてみましょう。'
+    hint: 'Select a piece and try placing it.<br>Edge = blocked / Corner = OK!<div class="hint-ja">ピースを選んで置いてみましょう。<br>辺に接する位置→置けない / 角に接する位置→置ける</div>'
   },
   // Step 7: Scoring
   {
@@ -1913,7 +1913,7 @@ function showTutorialStep() {
   } else if (step.type === 'action') {
     // Hide overlay, show hint
     overlay.classList.remove('show');
-    hint.textContent = step.hint;
+    hint.innerHTML = step.hint;
     hint.className = 'show';
   }
 }
