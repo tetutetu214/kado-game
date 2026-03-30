@@ -175,8 +175,8 @@ canvas#board { display: block; touch-action: none; }
 #auto-pass-toast .pass-name { font-weight: bold; font-size: 17px; }
 @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; } }
 #battle-menu, #puzzle-menu { flex-direction: column; align-items: center; gap: 16px; }
-#battle-menu h2, #puzzle-menu h2 { font-size: 16px; letter-spacing: 2px; }
-#battle-menu p, #puzzle-menu p { color: #888; font-size: 12px; }
+#battle-menu h2, #puzzle-menu h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; letter-spacing: 2px; }
+#battle-menu p, #puzzle-menu p { color: #888; font-size: 12px; margin-bottom: 4px; }
 #board-size-screen { flex-direction: column; align-items: center; gap: 8px; }
 #board-size-screen h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; letter-spacing: 2px; }
 #board-size-screen p { color: #888; font-size: 12px; margin-bottom: 4px; }
@@ -226,7 +226,7 @@ canvas#board { display: block; touch-action: none; }
     </button>
     <button id="btn-battle" class="start-btn">
       BATTLE
-      <span class="sub">Compete against rivals</span>
+      <span class="sub">1P vs CPU / Local multiplayer</span>
     </button>
     <button id="btn-puzzle-menu" class="start-btn">
       PUZZLE
@@ -248,7 +248,7 @@ canvas#board { display: block; touch-action: none; }
   </div>
   <div id="battle-menu" style="display:none;">
     <h2>BATTLE</h2>
-    <p>Choose your battle mode</p>
+    <p>Select battle mode</p>
     <button id="btn-vs-cpu" class="start-btn">
       1P vs CPU
       <span class="sub">Play against AI</span>
@@ -1569,7 +1569,9 @@ function hidePuzzleMenu() {
 
 function showBoardSizeSelect(mode) {
   pendingGameMode = mode;
-  document.getElementById('main-menu').style.display = 'none';
+  // Hide whichever submenu is showing
+  document.getElementById('battle-menu').style.display = 'none';
+  document.getElementById('puzzle-menu').style.display = 'none';
   // Update subtitles for puzzle mode to show total pieces
   if (mode === 'puzzle') {
     document.querySelector('#btn-size-14 .sub').textContent = '48 pieces (12 × 4 colors)';
@@ -1876,7 +1878,8 @@ function quitToTitle() {
   document.getElementById('main-menu').style.display = 'flex';
   document.getElementById('battle-menu').style.display = 'none';
   document.getElementById('puzzle-menu').style.display = 'none';
-  hideOrderSelect();
+  document.getElementById('board-size-screen').style.display = 'none';
+  document.getElementById('order-select').style.display = 'none';
   document.getElementById('char-select').style.display = 'none';
   const save = loadGame();
   const continueBtn = document.getElementById('continue-btn');
@@ -1895,7 +1898,8 @@ function backToTitle() {
   document.getElementById('main-menu').style.display = 'flex';
   document.getElementById('battle-menu').style.display = 'none';
   document.getElementById('puzzle-menu').style.display = 'none';
-  hideOrderSelect();
+  document.getElementById('board-size-screen').style.display = 'none';
+  document.getElementById('order-select').style.display = 'none';
   document.getElementById('char-select').style.display = 'none';
 }
 
@@ -2137,6 +2141,7 @@ function endTutorial() {
   document.querySelector('#start-screen > h1').style.display = '';
   document.querySelector('#start-screen > p').style.display = '';
   document.getElementById('main-menu').style.display = 'flex';
+  document.getElementById('battle-menu').style.display = 'none';
 }
 
 // Called when placement fails during tutorial - show edge NG feedback
@@ -2176,11 +2181,11 @@ function setupEventListeners() {
   document.getElementById('continue-btn').addEventListener('click', resumeGame);
   document.getElementById('btn-battle').addEventListener('click', showBattleMenu);
   document.getElementById('btn-battle-back').addEventListener('click', hideBattleMenu);
-  document.getElementById('btn-vs-cpu').addEventListener('click', function() { hideBattleMenu(); showBoardSizeSelect('cpu'); });
-  document.getElementById('btn-local-4p').addEventListener('click', function() { hideBattleMenu(); showBoardSizeSelect('local'); });
+  document.getElementById('btn-vs-cpu').addEventListener('click', function() { showBoardSizeSelect('cpu'); });
+  document.getElementById('btn-local-4p').addEventListener('click', function() { showBoardSizeSelect('local'); });
   document.getElementById('btn-puzzle-menu').addEventListener('click', showPuzzleMenu);
   document.getElementById('btn-puzzle-back').addEventListener('click', hidePuzzleMenu);
-  document.getElementById('btn-puzzle').addEventListener('click', function() { hidePuzzleMenu(); showBoardSizeSelect('puzzle'); });
+  document.getElementById('btn-puzzle').addEventListener('click', function() { showBoardSizeSelect('puzzle'); });
   document.getElementById('btn-tutorial').addEventListener('click', startTutorial);
   document.getElementById('btn-stats').addEventListener('click', showStats);
 
