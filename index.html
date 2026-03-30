@@ -1736,7 +1736,8 @@ function quitToTitle() {
   document.querySelector('#start-screen > p').style.display = '';
   document.getElementById('main-menu').style.display = 'flex';
   document.getElementById('battle-menu').style.display = 'none';
-  hideOrderSelect();
+  document.getElementById('board-size-screen').style.display = 'none';
+  document.getElementById('order-select').style.display = 'none';
   document.getElementById('char-select').style.display = 'none';
   const save = loadGame();
   const continueBtn = document.getElementById('continue-btn');
@@ -1754,7 +1755,8 @@ function backToTitle() {
   document.querySelector('#start-screen > p').style.display = '';
   document.getElementById('main-menu').style.display = 'flex';
   document.getElementById('battle-menu').style.display = 'none';
-  hideOrderSelect();
+  document.getElementById('board-size-screen').style.display = 'none';
+  document.getElementById('order-select').style.display = 'none';
   document.getElementById('char-select').style.display = 'none';
 }
 
