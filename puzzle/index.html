@@ -363,7 +363,7 @@ function drawBoard() {
   }
 
   // Highlight placeable corners for active color
-  if (selectedPieceIdx === null && !isFirstPiece(activeColor)) {
+  if (!isFirstPiece(activeColor)) {
     var corners = getCornerPositions(activeColor);
     for (var i = 0; i < corners.length; i++) {
       var cr = corners[i][0], cc = corners[i][1];
