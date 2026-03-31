@@ -57,11 +57,17 @@ canvas#board { display: block; touch-action: none; }
 .back-link { font-size: 12px; color: #888; text-decoration: none; margin-top: 8px; }
 .back-link:hover { color: #e94560; text-decoration: underline; }
 
-/* Rules panel */
-#rules-box { max-width: 340px; width: 90%; text-align: left; background: rgba(13,21,40,0.8); border: 1px solid rgba(233,69,96,0.2); border-radius: 8px; padding: 16px; }
-#rules-box h3 { font-size: 12px; color: #e94560; margin-bottom: 6px; }
-#rules-box ul { padding-left: 18px; margin: 0; }
-#rules-box li { font-size: 11px; color: #aaa; line-height: 1.8; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+/* Puzzle intro overlay */
+#puzzle-intro-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 300; justify-content: center; align-items: center; }
+#puzzle-intro-overlay.show { display: flex; }
+#puzzle-intro-box { background: #0d1528; border: 1px solid rgba(233,69,96,0.3); border-radius: 8px; padding: 24px; max-width: 480px; width: 92%; max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 0 30px rgba(233,69,96,0.15); }
+#puzzle-intro-box h2 { text-align: center; font-size: 18px; color: #e94560; margin-bottom: 12px; text-shadow: 0 0 10px rgba(233,69,96,0.4); }
+#puzzle-intro-box h3 { font-size: 14px; color: #e94560; margin: 10px 0 4px; }
+#puzzle-intro-box p, #puzzle-intro-box li { font-size: 13px; line-height: 1.6; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+#puzzle-intro-box ul { padding-left: 18px; margin: 4px 0; }
+#puzzle-intro-box .ja { font-size: 12px; color: #999; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin-top: 2px; }
+#puzzle-intro-start-btn { display: block; margin: 16px auto 0; background: transparent; border: 1px solid #e94560; color: #e94560; padding: 10px 28px; border-radius: 4px; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: 'Orbitron', sans-serif; transition: all 0.2s; }
+#puzzle-intro-start-btn:hover { background: rgba(233,69,96,0.15); box-shadow: 0 0 20px rgba(233,69,96,0.3); }
 
 /* Clear modal */
 #clear-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; }
@@ -87,19 +93,9 @@ canvas#board { display: block; touch-action: none; }
   <div class="subtitle">PUZZLE</div>
   <p>TETROMINO RECTANGLE CHALLENGE</p>
   <button id="btn-start" class="start-btn">
-    START
+    TETROMINO RECT
     <span class="sub">8 &times; 10 / 20 pieces</span>
   </button>
-  <div id="rules-box">
-    <h3>RULES</h3>
-    <ul>
-      <li>4色 &times; 5種のテトロミノ（4マスピース）を使用</li>
-      <li>8 &times; 10の枠にぴったり収めればクリア</li>
-      <li>同じ色のピースは角と角でつなげる</li>
-      <li>同じ色のピースの辺と辺はくっつけられない</li>
-      <li>どこからでも始められます</li>
-    </ul>
-  </div>
   <a class="back-link" href="../">BACK TO KADO</a>
 </div>
 
@@ -123,6 +119,28 @@ canvas#board { display: block; touch-action: none; }
       <button id="undo-btn" disabled>UNDO</button>
     </div>
     <div id="piece-list"></div>
+  </div>
+</div>
+
+<!-- Puzzle Intro Overlay -->
+<div id="puzzle-intro-overlay">
+  <div id="puzzle-intro-box">
+    <h2>TETROMINO RECT</h2>
+    <p style="text-align:center;color:#e94560;font-size:13px;margin-bottom:8px;font-family:'Orbitron',sans-serif;letter-spacing:1px;">8 &times; 10 &mdash; 20 pieces</p>
+    <div id="puzzle-intro-content">
+      <h3>OBJECTIVE</h3>
+      <p>Fill the <b>8 &times; 10 rectangle</b> completely using all 20 tetromino pieces.</p>
+      <p class="ja">4色 &times; 5種のテトロミノ（4マスピース）で、8 &times; 10の枠をぴったり埋めましょう。</p>
+      <h3>RULES</h3>
+      <ul>
+        <li>Same-color pieces must connect <b>corner-to-corner</b></li>
+        <li>Same-color pieces must <b>never share an edge</b></li>
+        <li>Different colors <b>may</b> share edges</li>
+        <li>First piece of each color can be placed <b>anywhere</b></li>
+      </ul>
+      <p class="ja">同色は角で接続・辺の接触は禁止。異なる色同士は辺の接触OK。各色の最初のピースはどこにでも置けます。</p>
+    </div>
+    <button id="puzzle-intro-start-btn">START</button>
   </div>
 </div>
 
@@ -739,14 +757,22 @@ function quitToTitle() {
   document.getElementById('start-screen').style.display = 'flex';
 }
 
+function showPuzzleIntro() {
+  document.getElementById('puzzle-intro-overlay').classList.add('show');
+}
+
 function startPuzzle() {
+  document.getElementById('puzzle-intro-overlay').classList.remove('show');
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   initPuzzle();
 }
 
 // ===== Event Listeners =====
-document.getElementById('btn-start').addEventListener('click', startPuzzle);
+document.getElementById('btn-start').addEventListener('click', showPuzzleIntro);
+document.getElementById('puzzle-intro-start-btn').addEventListener('click', startPuzzle);
+document.getElementById('puzzle-intro-overlay').addEventListener('click', function() {}); // prevent click-through
+document.getElementById('puzzle-intro-box').addEventListener('click', function(e) { e.stopPropagation(); });
 document.getElementById('quit-btn').addEventListener('click', quitToTitle);
 document.getElementById('rotate-btn').addEventListener('click', rotatePiece);
 document.getElementById('flip-btn').addEventListener('click', flipPiece);
