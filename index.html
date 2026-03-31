@@ -1375,7 +1375,12 @@ function saveGame() {
       pieceUsed: state.playerPieces.map(pp => pp.map(p => p.used)),
       cpuCharacterIds: cpuCharacters.map(c => c ? c.id : null),
       boardSize: state.BOARD_SIZE,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      // Continuous battle state
+      continuousMode: continuousMode,
+      totalRounds: totalRounds,
+      currentRound: currentRound,
+      seriesScores: seriesScores
     };
     localStorage.setItem('kado_save', JSON.stringify(saveData));
   } catch(e) {
@@ -1435,12 +1440,23 @@ function resumeGame() {
     players = PLAYERS_LOCAL;
   }
 
+  // Restore continuous battle state
+  if (save.continuousMode) {
+    continuousMode = true;
+    totalRounds = save.totalRounds;
+    currentRound = save.currentRound;
+    seriesScores = save.seriesScores;
+  } else {
+    resetContinuousState();
+  }
+
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   selectedPieceIdx = null;
   currentShape = null;
   ghostPos = null;
   cpuThinking = false;
+  updateRoundIndicator();
   updateTurnIndicator();
   resizeBoard();
   updatePieceList();
@@ -1951,10 +1967,9 @@ function quitToTitle() {
     endTutorial();
     return;
   }
-  if (!state.gameOver && !continuousMode) {
+  if (!state.gameOver) {
     saveGame();
   }
-  resetContinuousState();
   document.getElementById('app').style.display = 'none';
   document.getElementById('start-screen').style.display = 'flex';
   document.querySelector('#start-screen > h1').style.display = '';
