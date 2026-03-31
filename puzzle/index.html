@@ -45,18 +45,6 @@ canvas#board { display: block; touch-action: none; }
 #undo-btn { background: #555 !important; color: #fff; font-size: 13px; }
 #undo-btn:disabled { opacity: 0.3; cursor: default; }
 
-/* Start screen */
-#start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; }
-#start-screen h1 { font-size: 36px; letter-spacing: 6px; font-weight: 900; color: #e94560; text-shadow: 0 0 10px rgba(233,69,96,0.6), 0 0 30px rgba(233,69,96,0.4); }
-#start-screen .subtitle { font-size: 14px; letter-spacing: 3px; color: #4da6d9; text-transform: uppercase; }
-#start-screen p { font-size: 11px; color: #667; letter-spacing: 2px; text-transform: uppercase; }
-.start-btn { background: transparent; border: 1px solid rgba(233,69,96,0.4); color: #eee; padding: 16px 40px; border-radius: 4px; font-size: 16px; cursor: pointer; width: 260px; text-align: center; touch-action: manipulation; text-transform: uppercase; letter-spacing: 2px; transition: all 0.2s; box-shadow: 0 0 8px rgba(233,69,96,0.15), inset 0 0 8px rgba(233,69,96,0.05); font-family: 'Orbitron', sans-serif; }
-.start-btn:hover { background: rgba(233,69,96,0.15); border-color: rgba(233,69,96,0.8); box-shadow: 0 0 20px rgba(233,69,96,0.3); }
-.start-btn:active { background: rgba(233,69,96,0.3); border-color: #e94560; }
-.start-btn .sub { font-size: 9px; color: #556; display: block; margin-top: 4px; letter-spacing: 1px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-.back-link { font-size: 12px; color: #888; text-decoration: none; margin-top: 8px; }
-.back-link:hover { color: #e94560; text-decoration: underline; }
-
 /* Puzzle intro overlay */
 #puzzle-intro-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 300; justify-content: center; align-items: center; }
 #puzzle-intro-overlay.show { display: flex; }
@@ -86,18 +74,6 @@ canvas#board { display: block; touch-action: none; }
 </style>
 </head>
 <body>
-
-<!-- Start Screen -->
-<div id="start-screen">
-  <h1>KADO</h1>
-  <div class="subtitle">PUZZLE</div>
-  <p>TETROMINO RECTANGLE CHALLENGE</p>
-  <button id="btn-start" class="start-btn">
-    TETROMINO RECT
-    <span class="sub">8 &times; 10 / 20 pieces</span>
-  </button>
-  <a class="back-link" href="../">BACK TO KADO</a>
-</div>
 
 <!-- Game Screen -->
 <div id="app">
@@ -140,7 +116,10 @@ canvas#board { display: block; touch-action: none; }
       </ul>
       <p class="ja">同色は角で接続・辺の接触は禁止。異なる色同士は辺の接触OK。各色の最初のピースはどこにでも置けます。</p>
     </div>
-    <button id="puzzle-intro-start-btn">START</button>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:center;">
+      <button id="puzzle-intro-back-btn" style="display:block;background:transparent;border:1px solid rgba(85,85,85,0.5);color:#aaa;padding:10px 20px;border-radius:4px;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:2px;font-family:'Orbitron',sans-serif;transition:all 0.2s;">BACK</button>
+      <button id="puzzle-intro-start-btn">START</button>
+    </div>
   </div>
 </div>
 
@@ -752,36 +731,33 @@ function showClear() {
 }
 
 // ===== Navigation =====
-function quitToTitle() {
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('start-screen').style.display = 'flex';
-}
-
-function showPuzzleIntro() {
-  document.getElementById('puzzle-intro-overlay').classList.add('show');
+function goBack() {
+  location.href = '../';
 }
 
 function startPuzzle() {
   document.getElementById('puzzle-intro-overlay').classList.remove('show');
-  document.getElementById('start-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   initPuzzle();
 }
 
 // ===== Event Listeners =====
-document.getElementById('btn-start').addEventListener('click', showPuzzleIntro);
 document.getElementById('puzzle-intro-start-btn').addEventListener('click', startPuzzle);
+document.getElementById('puzzle-intro-back-btn').addEventListener('click', goBack);
 document.getElementById('puzzle-intro-overlay').addEventListener('click', function() {}); // prevent click-through
 document.getElementById('puzzle-intro-box').addEventListener('click', function(e) { e.stopPropagation(); });
-document.getElementById('quit-btn').addEventListener('click', quitToTitle);
+document.getElementById('quit-btn').addEventListener('click', goBack);
 document.getElementById('rotate-btn').addEventListener('click', rotatePiece);
 document.getElementById('flip-btn').addEventListener('click', flipPiece);
 document.getElementById('deselect-btn').addEventListener('click', deselectPiece);
 document.getElementById('undo-btn').addEventListener('click', undoMove);
 document.getElementById('clear-title-btn').addEventListener('click', function() {
   document.getElementById('clear-overlay').classList.remove('show');
-  quitToTitle();
+  goBack();
 });
+
+// Show intro overlay on page load
+document.getElementById('puzzle-intro-overlay').classList.add('show');
 
 window.addEventListener('resize', function() {
   if (document.getElementById('app').style.display !== 'none') resizeBoard();
