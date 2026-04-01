@@ -231,6 +231,143 @@
 
 <script src="js/game-logic.js"></script>
 <script src="js/main.js"></script>
+<script>
+// GA4 Custom Event Tracking (Issue #112)
+(function() {
+  // Safe gtag wrapper
+  function trackEvent(eventName, params) {
+    if (typeof gtag === 'function') {
+      gtag('event', eventName, params || {});
+    }
+  }
+
+  // Game timer
+  var gameStartTime = 0;
+  function getElapsedSec() {
+    return gameStartTime ? Math.round((Date.now() - gameStartTime) / 1000) : 0;
+  }
+
+  // --- STEP 1: Basic Events (6) ---
+
+  // 1. game_start
+  var origStartGame = window.startGame;
+  window.startGame = function(mode) {
+    gameStartTime = Date.now();
+    trackEvent('game_start', {
+      game_mode: mode,
+      board_size: selectedBoardSize
+    });
+    return origStartGame.apply(this, arguments);
+  };
+
+  // 2. game_end
+  var origEndGame = window.endGame;
+  window.endGame = function() {
+    var duration = getElapsedSec();
+    trackEvent('game_end', {
+      game_mode: state.gameMode,
+      board_size: state.BOARD_SIZE,
+      duration_sec: duration
+    });
+    return origEndGame.apply(this, arguments);
+  };
+
+  // 3. tutorial_start
+  var origStartTutorial = window.startTutorial;
+  window.startTutorial = function() {
+    trackEvent('tutorial_start');
+    return origStartTutorial.apply(this, arguments);
+  };
+
+  // 4. tutorial_complete
+  var origEndTutorial = window.endTutorial;
+  window.endTutorial = function() {
+    trackEvent('tutorial_complete', {
+      steps_completed: tutorialStep || 0
+    });
+    return origEndTutorial.apply(this, arguments);
+  };
+
+  // 5. mode_select
+  var origShowBoardSizeSelect = window.showBoardSizeSelect;
+  window.showBoardSizeSelect = function(mode) {
+    trackEvent('mode_select', { game_mode: mode });
+    return origShowBoardSizeSelect.apply(this, arguments);
+  };
+
+  // 6. board_size_select
+  var origConfirmBoardSize = window.confirmBoardSize;
+  window.confirmBoardSize = function(size) {
+    trackEvent('board_size_select', {
+      board_size: size,
+      game_mode: pendingGameMode
+    });
+    return origConfirmBoardSize.apply(this, arguments);
+  };
+
+  // --- STEP 2: Additional Events (5) ---
+
+  // 7. round_select
+  var origConfirmRounds = window.confirmRounds;
+  window.confirmRounds = function(rounds) {
+    trackEvent('round_select', { total_rounds: rounds });
+    return origConfirmRounds.apply(this, arguments);
+  };
+
+  // 8. character_select
+  var origConfirmCharSelect = window.confirmCharSelect;
+  window.confirmCharSelect = function() {
+    var names = (cpuCharacters || []).map(function(c) { return c ? c.name : 'unknown'; });
+    trackEvent('character_select', {
+      opponents: names.join(','),
+      opponent_count: names.length
+    });
+    return origConfirmCharSelect.apply(this, arguments);
+  };
+
+  // 9. puzzle_result (wrap endGame further to capture puzzle specifics)
+  var wrappedEndGame = window.endGame;
+  window.endGame = function() {
+    if (state.gameMode === 'puzzle') {
+      var allPlaced = state.playerPieces.every(function(pp) { return pp.every(function(p) { return p.used; }); });
+      var totalPieces = state.playerPieces.reduce(function(s, pp) { return s + pp.length; }, 0);
+      var placed = state.playerPieces.reduce(function(s, pp) { return s + pp.filter(function(p) { return p.used; }).length; }, 0);
+      trackEvent('puzzle_result', {
+        result: allPlaced ? 'clear' : 'failed',
+        board_size: state.BOARD_SIZE,
+        pieces_placed: placed,
+        pieces_total: totalPieces,
+        duration_sec: getElapsedSec()
+      });
+    }
+    return wrappedEndGame.apply(this, arguments);
+  };
+
+  // 10. series_complete
+  var origShowSeriesFinalResult = window.showSeriesFinalResult;
+  window.showSeriesFinalResult = function() {
+    var best = -999, winner = 0;
+    seriesScores.forEach(function(s, i) { if (s > best) { best = s; winner = i; } });
+    trackEvent('series_complete', {
+      total_rounds: totalRounds,
+      winner: players[winner].name,
+      is_player_winner: winner === state.humanPlayer,
+      scores: seriesScores.join(',')
+    });
+    return origShowSeriesFinalResult.apply(this, arguments);
+  };
+
+  // 11. game_resume
+  var origResumeGame = window.resumeGame;
+  window.resumeGame = function() {
+    gameStartTime = Date.now();
+    trackEvent('game_resume', {
+      game_mode: state.gameMode || 'unknown'
+    });
+    return origResumeGame.apply(this, arguments);
+  };
+})();
+</script>
 <div id="stats-overlay">
   <div id="stats-modal">
     <h2>RECORDS</h2>
