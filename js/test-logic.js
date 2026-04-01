@@ -9,7 +9,7 @@ function assert(name, condition) {
 function section(name) { console.log('\n\x1b[33m' + name + '\x1b[0m'); }
 
 async function runTests() {
-  const GL = await import('./game-logic.js');
+  const GL = require('./game-logic.js');
 
   // Setup a mock state
   function makeState(boardSize) {

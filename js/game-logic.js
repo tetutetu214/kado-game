@@ -406,3 +406,15 @@ function hasValidMove(player) {
   }
   return false;
 }
+
+// Node.js exports (for tests). No-op when loaded via <script> or importScripts.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    PIECE_SHAPES, PIECES_14, PIECES_24,
+    rotateCW, flipH, normalize, getAllOrientations,
+    isFirstMove, getStartCorner, canPlace, placePiece,
+    getScore, hasValidMove, cpuMove, setGameState,
+    initState, restoreState, state,
+    getCornerPositions, countNewCorners, countBlockedOpponentCorners, getCenterDistance,
+  };
+}
