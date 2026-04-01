@@ -1,4 +1,13 @@
 
+// ===== View Transition Helper =====
+function withViewTransition(callback) {
+  if (document.startViewTransition) {
+    document.startViewTransition(callback);
+  } else {
+    callback();
+  }
+}
+
 // ===== Constants =====
 // state.BOARD_SIZE is now in state (game-logic.js)
 
@@ -1214,27 +1223,29 @@ function resumeGame() {
     resetContinuousState();
   }
 
-  document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
+  withViewTransition(() => {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
 
-  // Show board size label
-  const sizeLabel = document.getElementById('board-size-label');
-  sizeLabel.textContent = state.BOARD_SIZE + '×' + state.BOARD_SIZE;
-  sizeLabel.style.display = '';
+    // Show board size label
+    const sizeLabel = document.getElementById('board-size-label');
+    sizeLabel.textContent = state.BOARD_SIZE + '×' + state.BOARD_SIZE;
+    sizeLabel.style.display = '';
 
-  selectedPieceIdx = null;
-  currentShape = null;
-  ghostPos = null;
-  cpuThinking = false;
-  updateRoundIndicator();
-  updateTurnIndicator();
-  resizeBoard();
-  updatePieceList();
+    selectedPieceIdx = null;
+    currentShape = null;
+    ghostPos = null;
+    cpuThinking = false;
+    updateRoundIndicator();
+    updateTurnIndicator();
+    resizeBoard();
+    updatePieceList();
 
-  // If it's CPU's turn, auto-play
-  if (isCpuPlayer(state.currentPlayer) && !state.gameOver) {
-    setTimeout(executeCpuTurn, 500);
-  }
+    // If it's CPU's turn, auto-play
+    if (isCpuPlayer(state.currentPlayer) && !state.gameOver) {
+      setTimeout(executeCpuTurn, 500);
+    }
+  });
 }
 
 function updateContinueButton() {
@@ -1540,19 +1551,21 @@ function startGame(mode) {
     players = PLAYERS_LOCAL;
   }
 
-  document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
+  withViewTransition(() => {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
 
-  if (continuousMode) {
-    updateRoundIndicator();
-  }
+    if (continuousMode) {
+      updateRoundIndicator();
+    }
 
-  // Show board size label
-  const sizeLabel = document.getElementById('board-size-label');
-  sizeLabel.textContent = selectedBoardSize + '×' + selectedBoardSize;
-  sizeLabel.style.display = '';
+    // Show board size label
+    const sizeLabel = document.getElementById('board-size-label');
+    sizeLabel.textContent = selectedBoardSize + '×' + selectedBoardSize;
+    sizeLabel.style.display = '';
 
-  initGame();
+    initGame();
+  });
 }
 
 function initGame() {
