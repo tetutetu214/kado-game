@@ -1803,20 +1803,22 @@ function quitToTitle() {
   if (!state.gameOver) {
     saveGame();
   }
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('start-screen').style.display = 'flex';
-  document.querySelector('#start-screen > h1').style.display = '';
-  document.querySelector('#start-screen > p').style.display = '';
-  document.getElementById('main-menu').style.display = 'flex';
-  document.getElementById('battle-menu').style.display = 'none';
-  document.getElementById('puzzle-menu').style.display = 'none';
-  document.getElementById('board-size-screen').style.display = 'none';
-  document.getElementById('order-select').style.display = 'none';
-  document.getElementById('char-select').style.display = 'none';
-  document.getElementById('round-select').style.display = 'none';
-  const save = loadGame();
-  const continueBtn = document.getElementById('continue-btn');
-  if (continueBtn) continueBtn.style.display = save ? 'inline-block' : 'none';
+  withViewTransition(() => {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'flex';
+    document.querySelector('#start-screen > h1').style.display = '';
+    document.querySelector('#start-screen > p').style.display = '';
+    document.getElementById('main-menu').style.display = 'flex';
+    document.getElementById('battle-menu').style.display = 'none';
+    document.getElementById('puzzle-menu').style.display = 'none';
+    document.getElementById('board-size-screen').style.display = 'none';
+    document.getElementById('order-select').style.display = 'none';
+    document.getElementById('char-select').style.display = 'none';
+    document.getElementById('round-select').style.display = 'none';
+    const save = loadGame();
+    const continueBtn = document.getElementById('continue-btn');
+    if (continueBtn) continueBtn.style.display = save ? 'inline-block' : 'none';
+  });
 }
 
 function backToTitle() {
@@ -1825,17 +1827,19 @@ function backToTitle() {
   document.getElementById('modal-close-btn').style.display = '';
   deleteSave();
   resetContinuousState();
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('start-screen').style.display = 'flex';
-  document.querySelector('#start-screen > h1').style.display = '';
-  document.querySelector('#start-screen > p').style.display = '';
-  document.getElementById('main-menu').style.display = 'flex';
-  document.getElementById('battle-menu').style.display = 'none';
-  document.getElementById('puzzle-menu').style.display = 'none';
-  document.getElementById('board-size-screen').style.display = 'none';
-  document.getElementById('order-select').style.display = 'none';
-  document.getElementById('char-select').style.display = 'none';
-  document.getElementById('round-select').style.display = 'none';
+  withViewTransition(() => {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'flex';
+    document.querySelector('#start-screen > h1').style.display = '';
+    document.querySelector('#start-screen > p').style.display = '';
+    document.getElementById('main-menu').style.display = 'flex';
+    document.getElementById('battle-menu').style.display = 'none';
+    document.getElementById('puzzle-menu').style.display = 'none';
+    document.getElementById('board-size-screen').style.display = 'none';
+    document.getElementById('order-select').style.display = 'none';
+    document.getElementById('char-select').style.display = 'none';
+    document.getElementById('round-select').style.display = 'none';
+  });
 }
 
 let resizeTimeout;
