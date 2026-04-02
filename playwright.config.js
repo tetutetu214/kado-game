@@ -1,5 +1,6 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
+const path = require('path');
 
 module.exports = defineConfig({
   testDir: './e2e',
@@ -11,10 +12,13 @@ module.exports = defineConfig({
   retries: 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'file://' + path.resolve(__dirname),
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
+    launchOptions: {
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+    },
   },
   projects: [
     {
@@ -22,9 +26,4 @@ module.exports = defineConfig({
       use: { browserName: 'chromium' },
     },
   ],
-  webServer: {
-    command: 'npx serve -p 3000 --no-clipboard',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
-  },
 });

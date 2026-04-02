@@ -1,9 +1,25 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const path = require('path');
+
+const INDEX_URL = 'file://' + path.resolve(__dirname, '..', 'index.html');
+
+// ===== Helper: 外部リソースをブロック =====
+async function blockExternalResources(page) {
+  await page.route('**/*', (route) => {
+    const url = route.request().url();
+    if (url.startsWith('file://')) {
+      return route.continue();
+    }
+    // 外部リソース (Google Fonts, gtag等) をブロック
+    return route.abort();
+  });
+}
 
 // ===== Helper: スタート画面が表示されるまで待機 =====
 async function waitForStartScreen(page) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await blockExternalResources(page);
+  await page.goto(INDEX_URL, { waitUntil: 'commit' });
   await expect(page.locator('#start-screen h1')).toHaveText('KADO');
   await expect(page.locator('#btn-battle')).toBeVisible();
 }
@@ -165,7 +181,7 @@ test.describe('ゲーム画面 UI 操作', () => {
     await startLocal4P(page, { boardSize: 14 });
 
     // ピースリストにピースが存在する
-    const pieces = page.locator('#piece-list .piece');
+    const pieces = page.locator('#piece-list .piece-item');
     await expect(pieces.first()).toBeVisible();
     const count = await pieces.count();
     expect(count).toBeGreaterThan(0);
