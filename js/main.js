@@ -1378,7 +1378,22 @@ function renderCharSelect() {
   const grid = document.getElementById('char-grid');
   grid.innerHTML = '';
   grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-  CPU_CHARACTERS.forEach((ch, i) => {
+  // Column headers
+  var colHeaders = ['ATK', 'DEF', 'RNG'];
+  colHeaders.forEach(function(h) {
+    var hdr = document.createElement('div');
+    hdr.className = 'char-grid-header';
+    hdr.textContent = h;
+    grid.appendChild(hdr);
+  });
+  // Grid layout: rows = Tier (strong→weak), cols = playstyle (ATK, DEF, RNG)
+  var gridOrder = [
+    0, 1, 2,  // Tier1: BLAZE, AEGIS, CHAOS
+    3, 4, 5,  // Tier2: SPIKE, PROXY, GLITCH
+    6, 7, 8   // Tier3: EMBER, ECHO, FLICKER
+  ];
+  gridOrder.forEach(function(i) {
+    var ch = CPU_CHARACTERS[i];
     const card = document.createElement('div');
     card.className = 'char-card';
     const cvs = document.createElement('canvas');
@@ -1387,8 +1402,7 @@ function renderCharSelect() {
     card.appendChild(cvs);
     const info = document.createElement('div');
     info.className = 'char-info';
-    info.innerHTML = '<span class="char-rank">Rank ' + ch.rank + '</span>' +
-      '<span class="char-name">' + ch.name + '</span>' +
+    info.innerHTML = '<span class="char-name">' + ch.name + '</span>' +
       '<span class="char-caption">' + ch.caption + '</span>';
     card.appendChild(info);
     // Stat tooltip (shown on hover/tap)

@@ -93,7 +93,8 @@ canvas#board { display: block; touch-action: none; }
 #order-select h2, #difficulty-select h2, #char-select h2 { font-size: 16px; margin-bottom: 4px; }
 #order-select p, #difficulty-select p, #char-select p { font-size: 12px; color: #aaa; }
 #char-select .char-slot-label { font-size: 14px; font-weight: bold; margin-top: 4px; }
-#char-select .char-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 95vw; max-width: 450px; }
+#char-select .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 95vw; max-width: 450px; }
+#char-select .char-grid-header { font-size: 11px; font-weight: bold; color: #e94560; text-align: center; padding: 2px 0; letter-spacing: 2px; }
 #char-select .char-card .char-name { font-size: 11px; white-space: nowrap; }
 #char-select .char-card { background: rgba(15,52,96,0.4); border: 1px solid rgba(233,69,96,0.2); border-radius: 4px; padding: 8px 6px; text-align: center; cursor: pointer; touch-action: manipulation; transition: all 0.2s; }
 #char-select .char-card:hover { background: rgba(15,52,96,0.7); border-color: rgba(233,69,96,0.6); box-shadow: 0 0 15px rgba(233,69,96,0.2); }
@@ -102,7 +103,6 @@ canvas#board { display: block; touch-action: none; }
 #char-select .char-card canvas { display: block; margin: 0 auto; }
 #char-select .char-card .char-info { display: flex; flex-direction: column; align-items: center; }
 #char-select .char-card .char-name { font-size: 13px; color: #eee; font-weight: bold; }
-#char-select .char-card .char-rank { font-size: 11px; color: #e94560; font-weight: bold; }
 #char-select .char-card .char-caption { font-size: 9px; color: #aaa; margin-top: 2px; }
 #char-select .char-card { position: relative; }
 #char-select .char-card .char-tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: rgba(10,20,40,0.95); border: 1px solid rgba(233,69,96,0.6); border-radius: 6px; padding: 10px 12px; z-index: 100; white-space: nowrap; min-width: 140px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); pointer-events: none; }
