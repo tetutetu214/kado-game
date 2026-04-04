@@ -277,6 +277,82 @@ test.describe('PUZZLE モード', () => {
     await expect(page.locator('#app')).toBeVisible({ timeout: 3000 });
     await expect(page.locator('#board')).toBeVisible();
   });
+
+  test('TETROMINO RECT のイントロが表示されゲームが開始する', async ({ page }) => {
+    await waitForStartScreen(page);
+
+    await page.click('#btn-puzzle-menu');
+    await expect(page.locator('#puzzle-menu')).toBeVisible();
+    await page.click('#btn-tetromino');
+
+    // ゲーム画面とイントロオーバーレイが表示
+    await expect(page.locator('#app')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#tetromino-intro-overlay')).toBeVisible({ timeout: 3000 });
+
+    // START ボタンでゲーム開始
+    await page.click('#tetromino-intro-start-btn');
+    await expect(page.locator('#tetromino-intro-overlay')).not.toBeVisible();
+
+    // ボード・ピースリスト・カラーセレクタが表示される
+    await expect(page.locator('#board')).toBeVisible();
+    await expect(page.locator('#piece-list')).toBeVisible();
+    await expect(page.locator('#color-selector')).toBeVisible();
+  });
+
+  test('TETROMINO RECT でピースを選択・解除できる', async ({ page }) => {
+    await waitForStartScreen(page);
+
+    await page.click('#btn-puzzle-menu');
+    await page.click('#btn-tetromino');
+    await expect(page.locator('#tetromino-intro-overlay')).toBeVisible({ timeout: 3000 });
+    await page.click('#tetromino-intro-start-btn');
+
+    // 5つのテトロミノピースが表示される
+    const pieces = page.locator('#piece-list .piece-item');
+    const count = await pieces.count();
+    expect(count).toBe(5);
+
+    // ピースを選択
+    await pieces.first().click();
+    await expect(pieces.first()).toHaveClass(/selected/);
+    await expect(page.locator('#deselect-btn')).toBeVisible();
+
+    // ピースを解除
+    await page.click('#deselect-btn');
+    await expect(pieces.first()).not.toHaveClass(/selected/);
+  });
+
+  test('TETROMINO RECT でカラー切り替えができる', async ({ page }) => {
+    await waitForStartScreen(page);
+
+    await page.click('#btn-puzzle-menu');
+    await page.click('#btn-tetromino');
+    await expect(page.locator('#tetromino-intro-overlay')).toBeVisible({ timeout: 3000 });
+    await page.click('#tetromino-intro-start-btn');
+
+    // カラーセレクタに4色のボタンがある
+    const colorBtns = page.locator('#color-selector .color-btn');
+    const colorCount = await colorBtns.count();
+    expect(colorCount).toBe(4);
+
+    // 2番目の色に切り替え
+    await colorBtns.nth(1).click();
+    await expect(colorBtns.nth(1)).toHaveClass(/active/);
+    await expect(colorBtns.nth(0)).not.toHaveClass(/active/);
+  });
+
+  test('TETROMINO RECT から HOME でタイトルに戻れる', async ({ page }) => {
+    await waitForStartScreen(page);
+
+    await page.click('#btn-puzzle-menu');
+    await page.click('#btn-tetromino');
+    await expect(page.locator('#tetromino-intro-overlay')).toBeVisible({ timeout: 3000 });
+    await page.click('#tetromino-intro-start-btn');
+
+    // HOME ボタンでタイトルに戻る
+    await page.click('#quit-btn');
+    await expect(page.locator('#start-screen')).toBeVisible({ timeout: 3000 });
+  });
 });
 
 // ============================================================
