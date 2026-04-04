@@ -1377,22 +1377,30 @@ function renderCharSelect() {
 
   const grid = document.getElementById('char-grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-  // Column headers
-  var colHeaders = ['ATK', 'DEF', 'RNG'];
+  grid.style.gridTemplateColumns = 'auto repeat(3, 1fr)';
+  // Column headers (empty corner + 3 playstyle labels)
+  var corner = document.createElement('div');
+  corner.className = 'char-grid-header';
+  grid.appendChild(corner);
+  var colHeaders = ['ATK', 'DEF', 'RANDOM'];
   colHeaders.forEach(function(h) {
     var hdr = document.createElement('div');
     hdr.className = 'char-grid-header';
     hdr.textContent = h;
     grid.appendChild(hdr);
   });
-  // Grid layout: rows = Tier (strong→weak), cols = playstyle (ATK, DEF, RNG)
-  var gridOrder = [
-    0, 1, 2,  // Tier1: BLAZE, AEGIS, CHAOS
-    3, 4, 5,  // Tier2: SPIKE, PROXY, GLITCH
-    6, 7, 8   // Tier3: EMBER, ECHO, FLICKER
+  // Grid layout: rows = Tier (strong→weak), cols = playstyle (ATK, DEF, RANDOM)
+  var tiers = [
+    { label: 'Tier1', chars: [0, 1, 2] },
+    { label: 'Tier2', chars: [3, 4, 5] },
+    { label: 'Tier3', chars: [6, 7, 8] }
   ];
-  gridOrder.forEach(function(i) {
+  tiers.forEach(function(tier) {
+    var rowLabel = document.createElement('div');
+    rowLabel.className = 'char-grid-tier';
+    rowLabel.textContent = tier.label;
+    grid.appendChild(rowLabel);
+    tier.chars.forEach(function(i) {
     var ch = CPU_CHARACTERS[i];
     const card = document.createElement('div');
     card.className = 'char-card';
@@ -1412,7 +1420,7 @@ function renderCharSelect() {
       '<div class="char-tooltip-caption">"' + ch.caption + '"</div>' +
       buildStatBar('ATK', ch.atk) +
       buildStatBar('DEF', ch.def) +
-      buildStatBar('RNG', ch.rng);
+      buildStatBar('RANDOM', ch.rng);
     card.appendChild(tooltip);
     drawCharPixelArt(cvs, ch.id);
     // Long-press shows tooltip on mobile, short tap selects
@@ -1439,6 +1447,7 @@ function renderCharSelect() {
     }, { passive: true });
     card.onclick = function() { if (!longPressed) pickCharacter(i); };
     grid.appendChild(card);
+    });
   });
 }
 
@@ -1472,7 +1481,7 @@ function pickCharacter(charIdx) {
         '<span class="char-caption">' + ch.caption + '</span>' +
         buildStatBar('ATK', ch.atk) +
         buildStatBar('DEF', ch.def) +
-        buildStatBar('RNG', ch.rng);
+        buildStatBar('RANDOM', ch.rng);
       card.appendChild(info);
       drawCharPixelArt(cvs, ch.id);
       grid.appendChild(card);
