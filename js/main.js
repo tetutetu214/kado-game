@@ -1036,14 +1036,12 @@ function showSingleGameResult() {
     row.className = 'score-row';
     row.style.alignItems = 'center';
     const isMe = (state.gameMode === 'cpu' && r.idx === state.humanPlayer);
-    const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#888'];
     const rankLabel = '#' + (pos + 1);
     const nameSpanEl = document.createElement('span');
     nameSpanEl.style.cssText = 'display:flex;align-items:center;gap:4px;';
-    // Rank label with medal color
     const rankSpanEl = document.createElement('span');
     rankSpanEl.textContent = rankLabel;
-    rankSpanEl.style.color = rankColors[pos] || '#888';
+    rankSpanEl.style.color = '#fff';
     nameSpanEl.appendChild(rankSpanEl);
     // Add character sprite for CPU players in results
     const rCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
@@ -1063,7 +1061,7 @@ function showSingleGameResult() {
     scoreSpanEl.textContent = r.score + 'pts';
     row.appendChild(nameSpanEl);
     row.appendChild(scoreSpanEl);
-    if (isMe) row.style.cssText = 'font-size:17px;font-weight:bold;';
+    if (isMe) row.style.cssText += 'font-size:17px;font-weight:bold;';
     div.appendChild(row);
   });
   body.appendChild(div);
@@ -1097,14 +1095,12 @@ function showRoundResult() {
     row.className = 'score-row';
     row.style.alignItems = 'center';
     const isMe = (r.idx === state.humanPlayer);
-    const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#888'];
     const rankLabel = '#' + (pos + 1);
     const rnSpan = document.createElement('span');
     rnSpan.style.cssText = 'display:flex;align-items:center;gap:4px;';
-    // Rank label with medal color
     const rnRank = document.createElement('span');
     rnRank.textContent = rankLabel;
-    rnRank.style.color = rankColors[pos] || '#888';
+    rnRank.style.color = '#fff';
     rnSpan.appendChild(rnRank);
     const rnCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
     if (rnCh && CHAR_PIXELS[rnCh.id]) {
@@ -1185,10 +1181,9 @@ function showSeriesFinalResult() {
     const row = document.createElement('div');
     row.className = 'score-row';
     const isMe = (r.idx === state.humanPlayer);
-    const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#888'];
     const rankLabel = '#' + (pos + 1);
-    row.innerHTML = `<span style="display:flex;align-items:center;gap:4px;"><span style="color:${rankColors[pos] || '#888'}">${rankLabel}</span> <span style="color:${r.player.color}">${r.player.name}</span></span><span>${r.score}pts</span>`;
-    if (isMe) row.style.cssText = 'font-size:17px;font-weight:bold;';
+    row.innerHTML = `<span style="display:flex;align-items:center;gap:4px;"><span style="color:#fff">${rankLabel}</span> <span style="color:${r.player.color}">${r.player.name}</span></span><span>${r.score}pts</span>`;
+    if (isMe) row.style.cssText += 'font-size:17px;font-weight:bold;';
     roundDiv.appendChild(row);
   });
   body.appendChild(roundDiv);
