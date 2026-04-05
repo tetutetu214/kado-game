@@ -774,6 +774,18 @@ function updateTurnIndicator() {
 function updateStatsBar() {
   const bar = document.getElementById('stats-bar');
   bar.innerHTML = '';
+  // Compute rankings for all players
+  const scores = [];
+  for (let i = 0; i < 4; i++) {
+    if (state.playerPieces[i]) scores.push({ idx: i, score: getScore(i) });
+  }
+  scores.sort((a, b) => b.score - a.score);
+  const rankMap = {};
+  let rank = 1;
+  for (let j = 0; j < scores.length; j++) {
+    if (j > 0 && scores[j].score < scores[j - 1].score) rank = j + 1;
+    rankMap[scores[j].idx] = rank;
+  }
   for (let i = 0; i < 4; i++) {
     const pieces = state.playerPieces[i];
     if (!pieces) continue;
@@ -783,6 +795,13 @@ function updateStatsBar() {
     div.className = 'stat-item' + (i === state.currentPlayer ? ' active' : '') + (viewingPlayer === i ? ' viewing' : '');
     const nameRow = document.createElement('div');
     nameRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:3px;';
+    // Add rank badge
+    if (state.gameMode !== 'puzzle') {
+      const rankBadge = document.createElement('span');
+      rankBadge.className = 'stat-rank rank-' + rankMap[i];
+      rankBadge.textContent = '#' + rankMap[i];
+      nameRow.appendChild(rankBadge);
+    }
     // Add pixel art for CPU characters
     const ch = (state.gameMode === 'cpu' && i !== state.humanPlayer) ? getCpuCharacter(i) : null;
     if (ch && CHAR_PIXELS[ch.id]) {
