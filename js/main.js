@@ -36,64 +36,42 @@ const PLAYERS_PUZZLE = [
 let cpuCharacters = [null, null, null];
 
 const CPU_CHARACTERS = [
-  { id: 'blaze',   rank: 1, name: 'BLAZE',   caption: 'Relentless force',  atk: 5, def: 2, rng: 0 },
-  { id: 'aegis',   rank: 2, name: 'AEGIS',   caption: 'Unbreakable wall',  atk: 1, def: 5, rng: 0 },
-  { id: 'chaos',   rank: 3, name: 'CHAOS',   caption: 'Brilliant madness', atk: 3, def: 3, rng: 5 },
-  { id: 'spike',   rank: 4, name: 'SPIKE',   caption: 'Sharp striker',     atk: 4, def: 1, rng: 0 },
-  { id: 'proxy',   rank: 5, name: 'PROXY',   caption: 'Steady shield',     atk: 1, def: 4, rng: 0 },
-  { id: 'glitch',  rank: 6, name: 'GLITCH',  caption: 'Unpredictable',     atk: 2, def: 1, rng: 4 },
-  { id: 'ember',   rank: 7, name: 'EMBER',   caption: 'Fading spark',      atk: 3, def: 0, rng: 0 },
-  { id: 'echo',    rank: 8, name: 'ECHO',    caption: 'Faint signal',      atk: 0, def: 3, rng: 0 },
-  { id: 'flicker', rank: 9, name: 'FLICKER', caption: 'Static noise',      atk: 0, def: 0, rng: 3 }
+  { id: 'blaze',   rank: 1, name: 'BLAZE',   caption: 'Inferno Hydra',     atk: 5, def: 2, rng: 0 },
+  { id: 'aegis',   rank: 2, name: 'AEGIS',   caption: 'Leviathan Kraken',  atk: 1, def: 5, rng: 0 },
+  { id: 'chaos',   rank: 3, name: 'CHAOS',   caption: 'Thunder Archon',    atk: 3, def: 3, rng: 5 },
+  { id: 'spike',   rank: 4, name: 'SPIKE',   caption: 'Plasma Raptor',     atk: 4, def: 1, rng: 0 },
+  { id: 'proxy',   rank: 5, name: 'PROXY',   caption: 'Aqua Serpent',      atk: 1, def: 4, rng: 0 },
+  { id: 'glitch',  rank: 6, name: 'GLITCH',  caption: 'Volt Stalker',      atk: 2, def: 1, rng: 4 },
+  { id: 'ember',   rank: 7, name: 'EMBER',   caption: 'Cinder Imp',        atk: 3, def: 0, rng: 0 },
+  { id: 'echo',    rank: 8, name: 'ECHO',    caption: 'Hydro Wisp',        atk: 0, def: 3, rng: 0 },
+  { id: 'flicker', rank: 9, name: 'FLICKER', caption: 'Spark Mite',        atk: 0, def: 0, rng: 3 }
 ];
 
-const CHAR_PIXELS = {
-blaze:[[0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,2,3,2,1,0],[0,0,0,0,0,0,0,0,0,0,2,3,3,2,0,0],[0,0,0,0,0,0,0,0,0,2,3,3,2,0,0,0],[0,0,0,0,0,0,0,0,2,3,3,2,0,0,0,0],[0,0,0,0,0,0,0,2,3,3,2,0,0,0,0,0],[0,0,0,0,0,0,2,3,3,2,0,0,0,0,0,0],[0,0,1,0,0,2,3,3,2,0,0,0,0,0,0,0],[0,0,0,1,2,3,3,2,0,0,0,0,0,0,0,0],[0,0,0,2,3,3,2,0,0,0,0,0,0,0,0,0],[0,0,2,3,3,2,0,0,0,0,0,0,0,0,0,0],[0,1,2,3,2,1,0,0,0,0,0,0,0,0,0,0],[1,2,1,2,1,2,1,0,0,0,0,0,0,0,0,0],[0,1,0,2,0,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0]],
-spike:[[0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,2,1,0,0,0,0,0,0,1,2,0,0,0],[0,0,0,0,2,1,0,0,0,0,1,2,0,0,0,0],[0,0,0,0,0,2,1,0,0,1,2,0,0,0,0,0],[0,0,0,0,0,0,2,1,1,2,0,0,0,0,0,0],[0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],[0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],[0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],[0,0,0,0,1,2,1,0,0,1,2,1,0,0,0,0],[0,0,0,1,2,1,0,0,0,0,1,2,1,0,0,0],[0,0,1,2,1,0,0,0,0,0,0,1,2,1,0,0],[0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-ember:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,1,2,1,0,0,0,0],[0,0,0,0,0,0,0,0,1,2,1,0,0,0,0,0],[0,0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],[0,0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],[0,0,0,0,0,1,2,1,0,0,0,0,0,0,0,0],[0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0],[0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-aegis:[[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,0,1,2,2,2,2,2,2,2,2,1,0,0,0],[0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0],[0,1,2,2,2,1,1,1,1,1,1,2,2,2,1,0],[0,1,2,2,1,2,2,3,3,2,2,1,2,2,1,0],[1,2,2,2,1,2,3,3,3,3,2,1,2,2,2,1],[1,2,2,2,1,2,3,2,2,3,2,1,2,2,2,1],[1,2,2,2,1,2,3,2,2,3,2,1,2,2,2,1],[1,2,2,2,1,2,3,3,3,3,2,1,2,2,2,1],[1,2,2,2,1,2,2,3,3,2,2,1,2,2,2,1],[0,1,2,2,2,1,1,1,1,1,1,2,2,2,1,0],[0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],[0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0],[0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],[0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0]],
-proxy:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],[0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],[0,0,1,2,2,2,2,1,1,2,2,2,2,1,0,0],[0,1,2,2,2,2,2,1,1,2,2,2,2,2,1,0],[0,1,2,2,2,2,2,1,1,2,2,2,2,2,1,0],[0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0],[0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0],[0,1,2,2,2,2,2,1,1,2,2,2,2,2,1,0],[0,1,2,2,2,2,2,1,1,2,2,2,2,2,1,0],[0,0,1,2,2,2,2,1,1,2,2,2,2,1,0,0],[0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],[0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-echo:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0],[0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0],[0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],[0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],[0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-chaos:[[0,0,0,0,1,1,1,0,0,0,0,1,1,0,0,0],[0,0,0,1,2,2,1,0,0,0,1,2,1,0,0,0],[0,0,1,2,2,1,0,0,0,1,2,1,0,0,0,0],[0,1,2,2,1,0,0,0,1,2,1,0,0,0,0,0],[1,2,2,2,1,1,1,1,2,2,1,0,0,0,0,0],[1,2,2,2,2,2,2,2,2,1,0,0,0,0,0,0],[0,1,1,1,1,1,2,2,1,0,0,0,0,0,0,0],[0,0,0,0,0,1,2,1,0,0,0,0,0,0,0,0],[0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,2,1,1,1,1,0,0,0,0,0,0],[0,0,1,2,2,2,2,2,2,1,0,0,0,0,0,0],[0,0,1,1,1,1,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,0,1,2,2,1,1,0,0,0,0,0,0],[0,0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-glitch:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,1,1,0,0,0,2,0,0,0],[0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0],[0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,0],[0,2,0,1,2,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,2,1,1,1,0,0,2,0,0,0,0],[0,0,0,1,2,2,2,2,1,0,0,0,0,0,0,0],[0,0,0,0,1,1,2,2,1,0,0,0,0,0,0,0],[0,0,0,0,0,1,2,1,0,0,0,0,0,2,0,0],[0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0],[0,0,2,0,1,2,1,0,0,2,0,0,0,0,0,0],[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
-flicker:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0],[0,0,0,1,2,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
-};
-
-const CHAR_PALETTES = {
-  blaze:   ['#ff2255', '#ff6688', '#ffaacc'],
-  spike:   ['#cc1144', '#cc5566', '#cc8899'],
-  ember:   ['#771133', '#884455', '#996677'],
-  aegis:   ['#0088ff', '#44bbff', '#aaddff'],
-  proxy:   ['#0066bb', '#3388cc', '#66aadd'],
-  echo:    ['#003366', '#335577', '#557799'],
-  chaos:   ['#ffaa00', '#ffcc33', '#ffee88'],
-  glitch:  ['#bb8800', '#ccaa33', '#ddcc66'],
-  flicker: ['#665500', '#887733', '#aa9955']
+// Character image paths (PNG sprites)
+var CHAR_IMAGES = {
+  blaze:   'img/Tier1_ATK.png',
+  aegis:   'img/Tier1_DEF.png',
+  chaos:   'img/Tier1_RANDOM.png',
+  spike:   'img/Tier2_ATK.png',
+  proxy:   'img/Tier2_DEF.png',
+  glitch:  'img/Tier2_RANDOM.png',
+  ember:   'img/Tier3_ATK.png',
+  echo:    'img/Tier3_DEF.png',
+  flicker: 'img/Tier3_RANDOM.png'
 };
 
 function getCharBreatheClass(charId) {
-  var ch = CPU_CHARACTERS.find(function(c) { return c.id === charId; });
-  if (!ch) return 'char-breathe-def';
-  if (ch.rng >= 3) return 'char-breathe-rng';
-  if (ch.atk >= ch.def) return 'char-breathe-atk';
-  return 'char-breathe-def';
+  return 'char-anim-' + charId;
 }
 
-function drawCharPixelArt(canvas, charId) {
-  var ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 16, 16);
-  var px = CHAR_PIXELS[charId];
-  var pal = CHAR_PALETTES[charId];
-  if (!px || !pal) return;
-  for (var y = 0; y < 16; y++) {
-    for (var x = 0; x < 16; x++) {
-      var v = px[y][x];
-      if (v >= 1 && v <= 3) {
-        ctx.fillStyle = pal[v - 1];
-        ctx.fillRect(x, y, 1, 1);
-      }
-    }
-  }
+// Create character image element
+function createCharImg(charId, size) {
+  var img = document.createElement('img');
+  img.src = CHAR_IMAGES[charId];
+  img.alt = charId;
+  img.style.cssText = 'width:' + size + 'px;height:' + size + 'px;object-fit:contain;';
+  img.className = getCharBreatheClass(charId);
+  return img;
 }
 
 // Generate AI params from character atk/def/rng values
@@ -802,15 +780,10 @@ function updateStatsBar() {
       rankBadge.textContent = '#' + rankMap[i];
       nameRow.appendChild(rankBadge);
     }
-    // Add pixel art for CPU characters
+    // Add character image for CPU players
     const ch = (state.gameMode === 'cpu' && i !== state.humanPlayer) ? getCpuCharacter(i) : null;
-    if (ch && CHAR_PIXELS[ch.id]) {
-      const cvs = document.createElement('canvas');
-      cvs.width = 16; cvs.height = 16;
-      cvs.style.cssText = 'width:14px;height:14px;image-rendering:pixelated;';
-      cvs.className = getCharBreatheClass(ch.id);
-      drawCharPixelArt(cvs, ch.id);
-      nameRow.appendChild(cvs);
+    if (ch && CHAR_IMAGES[ch.id]) {
+      nameRow.appendChild(createCharImg(ch.id, 14));
     }
     const nameSpan = document.createElement('span');
     nameSpan.className = 'stat-name';
@@ -1045,13 +1018,8 @@ function showSingleGameResult() {
     nameSpanEl.appendChild(rankSpanEl);
     // Add character sprite for CPU players in results
     const rCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
-    if (rCh && CHAR_PIXELS[rCh.id]) {
-      const rCvs = document.createElement('canvas');
-      rCvs.width = 16; rCvs.height = 16;
-      rCvs.style.cssText = 'width:16px;height:16px;image-rendering:pixelated;';
-      rCvs.className = getCharBreatheClass(rCh.id);
-      drawCharPixelArt(rCvs, rCh.id);
-      nameSpanEl.appendChild(rCvs);
+    if (rCh && CHAR_IMAGES[rCh.id]) {
+      nameSpanEl.appendChild(createCharImg(rCh.id, 16));
     }
     const nameTextEl = document.createElement('span');
     nameTextEl.textContent = r.player.name;
@@ -1103,13 +1071,8 @@ function showRoundResult() {
     rnRank.style.color = '#fff';
     rnSpan.appendChild(rnRank);
     const rnCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
-    if (rnCh && CHAR_PIXELS[rnCh.id]) {
-      const rnCvs = document.createElement('canvas');
-      rnCvs.width = 16; rnCvs.height = 16;
-      rnCvs.style.cssText = 'width:16px;height:16px;image-rendering:pixelated;';
-      rnCvs.className = getCharBreatheClass(rnCh.id);
-      drawCharPixelArt(rnCvs, rnCh.id);
-      rnSpan.appendChild(rnCvs);
+    if (rnCh && CHAR_IMAGES[rnCh.id]) {
+      rnSpan.appendChild(createCharImg(rnCh.id, 16));
     }
     const rnName = document.createElement('span');
     rnName.textContent = r.player.name;
@@ -1475,11 +1438,8 @@ function renderCharSelect() {
     var ch = CPU_CHARACTERS[i];
     const card = document.createElement('div');
     card.className = 'char-card';
-    const cvs = document.createElement('canvas');
-    cvs.width = 16; cvs.height = 16;
-    cvs.style.cssText = 'image-rendering:pixelated;width:40px;height:40px;';
-    cvs.className = getCharBreatheClass(ch.id);
-    card.appendChild(cvs);
+    var charImg = createCharImg(ch.id, 40);
+    card.appendChild(charImg);
     const info = document.createElement('div');
     info.className = 'char-info';
     info.innerHTML = '<span class="char-name">' + ch.name + '</span>' +
@@ -1494,7 +1454,6 @@ function renderCharSelect() {
       buildStatBar('DEF', ch.def) +
       buildStatBar('RANDOM', ch.rng);
     card.appendChild(tooltip);
-    drawCharPixelArt(cvs, ch.id);
     // Long-press shows tooltip on mobile, short tap selects
     var pressTimer = null;
     var longPressed = false;
@@ -1543,10 +1502,7 @@ function pickCharacter(charIdx) {
         if (ci === i) { pos = p + 1; break; }
         ci++;
       }
-      const cvs = document.createElement('canvas');
-      cvs.width = 16; cvs.height = 16;
-      cvs.style.cssText = 'image-rendering:pixelated;width:40px;height:40px;';
-      card.appendChild(cvs);
+      card.appendChild(createCharImg(ch.id, 40));
       const info = document.createElement('div');
       info.className = 'char-info';
       info.innerHTML = '<span class="char-name">#' + pos + ' ' + ch.name + '</span>' +
@@ -1555,7 +1511,6 @@ function pickCharacter(charIdx) {
         buildStatBar('DEF', ch.def) +
         buildStatBar('RANDOM', ch.rng);
       card.appendChild(info);
-      drawCharPixelArt(cvs, ch.id);
       grid.appendChild(card);
     });
   } else {
@@ -1800,12 +1755,10 @@ function buildCharGrid(stats) {
     var hasData = cs && cs.games > 0;
     var cell = document.createElement('div');
     cell.style.cssText = 'text-align:center;padding:6px 2px;border:1px solid rgba(233,69,96,0.2);border-radius:4px;' + (hasData ? '' : 'opacity:0.3;');
-    var cvs = document.createElement('canvas');
-    cvs.width = 16; cvs.height = 16;
-    cvs.style.cssText = 'width:20px;height:20px;image-rendering:pixelated;display:block;margin:0 auto 2px;';
-    cvs.className = getCharBreatheClass(ch.id);
-    drawCharPixelArt(cvs, ch.id);
-    cell.appendChild(cvs);
+    var charImg = createCharImg(ch.id, 20);
+    charImg.style.display = 'block';
+    charImg.style.margin = '0 auto 2px';
+    cell.appendChild(charImg);
     var nameEl = document.createElement('div');
     nameEl.style.cssText = 'font-size:10px;font-weight:bold;color:#eee;';
     nameEl.textContent = ch.name;
