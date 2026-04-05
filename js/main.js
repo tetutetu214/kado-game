@@ -1038,7 +1038,11 @@ function showSingleGameResult() {
     const isMe = (state.gameMode === 'cpu' && r.idx === state.humanPlayer);
     const rankLabel = '#' + (pos + 1);
     const nameSpanEl = document.createElement('span');
-    nameSpanEl.style.cssText = 'display:flex;align-items:center;gap:4px;color:' + r.player.color;
+    nameSpanEl.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const rankSpanEl = document.createElement('span');
+    rankSpanEl.textContent = rankLabel;
+    rankSpanEl.style.color = '#fff';
+    nameSpanEl.appendChild(rankSpanEl);
     // Add character sprite for CPU players in results
     const rCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
     if (rCh && CHAR_PIXELS[rCh.id]) {
@@ -1049,12 +1053,15 @@ function showSingleGameResult() {
       drawCharPixelArt(rCvs, rCh.id);
       nameSpanEl.appendChild(rCvs);
     }
-    nameSpanEl.appendChild(document.createTextNode(rankLabel + ' ' + r.player.name));
+    const nameTextEl = document.createElement('span');
+    nameTextEl.textContent = r.player.name;
+    nameTextEl.style.color = r.player.color;
+    nameSpanEl.appendChild(nameTextEl);
     const scoreSpanEl = document.createElement('span');
     scoreSpanEl.textContent = r.score + 'pts';
     row.appendChild(nameSpanEl);
     row.appendChild(scoreSpanEl);
-    if (isMe) row.style.cssText = 'font-size:17px;font-weight:bold;';
+    if (isMe) row.style.cssText += 'font-size:17px;font-weight:bold;';
     div.appendChild(row);
   });
   body.appendChild(div);
@@ -1090,7 +1097,11 @@ function showRoundResult() {
     const isMe = (r.idx === state.humanPlayer);
     const rankLabel = '#' + (pos + 1);
     const rnSpan = document.createElement('span');
-    rnSpan.style.cssText = 'display:flex;align-items:center;gap:4px;color:' + r.player.color;
+    rnSpan.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const rnRank = document.createElement('span');
+    rnRank.textContent = rankLabel;
+    rnRank.style.color = '#fff';
+    rnSpan.appendChild(rnRank);
     const rnCh = (state.gameMode === 'cpu' && r.idx !== state.humanPlayer) ? getCpuCharacter(r.idx) : null;
     if (rnCh && CHAR_PIXELS[rnCh.id]) {
       const rnCvs = document.createElement('canvas');
@@ -1100,7 +1111,10 @@ function showRoundResult() {
       drawCharPixelArt(rnCvs, rnCh.id);
       rnSpan.appendChild(rnCvs);
     }
-    rnSpan.appendChild(document.createTextNode(rankLabel + ' ' + r.player.name));
+    const rnName = document.createElement('span');
+    rnName.textContent = r.player.name;
+    rnName.style.color = r.player.color;
+    rnSpan.appendChild(rnName);
     const rnScore = document.createElement('span');
     rnScore.textContent = r.score + 'pts';
     row.appendChild(rnSpan);
@@ -1168,8 +1182,8 @@ function showSeriesFinalResult() {
     row.className = 'score-row';
     const isMe = (r.idx === state.humanPlayer);
     const rankLabel = '#' + (pos + 1);
-    row.innerHTML = `<span style="color:${r.player.color}">${rankLabel} ${r.player.name}</span><span>${r.score}pts</span>`;
-    if (isMe) row.style.cssText = 'font-size:17px;font-weight:bold;';
+    row.innerHTML = `<span style="display:flex;align-items:center;gap:4px;"><span style="color:#fff">${rankLabel}</span> <span style="color:${r.player.color}">${r.player.name}</span></span><span>${r.score}pts</span>`;
+    if (isMe) row.style.cssText += 'font-size:17px;font-weight:bold;';
     roundDiv.appendChild(row);
   });
   body.appendChild(roundDiv);
