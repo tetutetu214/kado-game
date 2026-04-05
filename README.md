@@ -85,17 +85,99 @@ Rank 1が最強。同タイプ内では色の濃さで強さが異なる。
 - **順位付きリザルト**: ゲーム終了時にスコア順で#1〜#4を表示
 - **色覚対応**: カラーユニバーサルデザイン準拠のカラーパレット
 
-## アーキテクチャ
+## プロジェクト構成
 
 ```
-index.html          ← HTML + CSS + UI（ES module）
-js/
-  game-logic.js     ← ゲームロジック（DOM非依存、Single Source of Truth）
-  test-logic.js     ← モジュール単体テスト（32件）
-test.js             ← 統合テスト（79件）
+kado-game/
+├── index.html              ← メインHTML（日本語版）
+├── en/
+│   └── index.html          ← 英語版
+├── css/
+│   └── style.css           ← ネオンアーケードUIスタイル
+├── js/
+│   ├── game-logic.js       ← ゲームロジック（DOM非依存、Single Source of Truth）
+│   ├── main.js             ← UIコントローラ・イベント処理・描画・CPU AI
+│   ├── tetromino.js        ← テトロミノパズルモード専用ロジック
+│   ├── test-logic.js       ← モジュール単体テスト（32件）
+│   └── worker.js           ← Web Worker（将来のバックグラウンドAI計算用）
+├── test.js                 ← 統合テスト（79件）
+├── test.html               ← ブラウザ用テストランナー
+├── e2e/
+│   └── game.spec.js        ← Playwright E2Eテスト
+├── package.json            ← npm設定・依存パッケージ
+├── playwright.config.js    ← Playwright設定
+├── favicon.svg             ← 4色ブロックのSVGファビコン
+├── ogp.png                 ← OGP画像（1200×630）
+├── robots.txt              ← クローラー許可設定
+├── sitemap.xml             ← サイトマップ（3 URL）
+└── .github/
+    └── workflows/
+        └── deploy-pages.yml ← GitHub Actions（GitHub Pages デプロイ）
 ```
 
-ゲームロジックはUIから分離。テスト可能で、将来のiOSアプリ移行時にそのまま再利用可能。
+### アーキテクチャ方針
+
+ゲームロジック (`game-logic.js`) はUIから完全分離。DOM非依存でテスト可能、将来のiOSアプリ移行時にそのまま再利用可能。
+
+| レイヤー | ファイル | 責務 |
+|----------|----------|------|
+| ロジック | `game-logic.js` | ピース定義・配置判定・スコア計算（純粋関数） |
+| UI | `main.js` | Canvas描画・イベント処理・CPU AI・localStorage |
+| パズル | `tetromino.js` | テトロミノモード専用（8×10ボード、20ピース） |
+| スタイル | `css/style.css` | ネオンアーケードUI・グローエフェクト・レスポンシブ |
+
+## index.html の構成
+
+メインのHTMLは以下の5つのセクションで構成されている。
+
+### `<head>` — メタ情報・SEO・OGP
+
+- **Google Analytics 4** (GA4) によるアクセス解析
+- **モバイル最適化**: viewport、apple-mobile-web-app-capable
+- **SEO**: title、description、keywords、canonical URL
+- **多言語**: `hreflang` で日本語版・英語版を相互リンク
+- **OGP**: og:title / og:description / og:image（SNSシェア用）
+- **Twitter Card**: summary_large_image 形式
+- **JSON-LD**: WebApplication スキーマ（構造化データ）
+- **Google Fonts**: Orbitron（400, 700, 900）— アーケード風フォント
+- **CSS**: `css/style.css` を外部読み込み
+
+### `<body>` — 画面構成
+
+```
+#start-screen          ← タイトル画面（モード選択・CONTINUE・TUTORIAL・RECORDS）
+#board-size-screen     ← ボードサイズ選択（14×14 / 20×20 / 24×24）
+#order-select          ← 開始位置選択（4隅から選択）
+#char-select           ← CPUキャラクター選択
+#round-select          ← ラウンド数選択（3 / 5 / 10）
+#app                   ← ゲーム画面
+  ├── #header          ← タイトル・ターン表示・ラウンド表示・SCOREボタン
+  ├── #stats-bar       ← リアルタイムプレイヤー情報
+  ├── #board-container ← Canvasボード・CPU思考中表示・自動パス通知
+  ├── #piece-panel     ← 操作ボタン（↻回転・↔反転・×選択解除・UNDO・PASS・HOME）
+  ├── #piece-list      ← ピース一覧
+  └── #viewing-label   ← 閲覧中プレイヤー表示
+#modal-overlay         ← スコア/戦績モーダル（NEW RECORD演出）
+```
+
+### スクリプト読み込み
+
+```html
+<script src="js/game-logic.js"></script>
+<script src="js/main.js"></script>
+<script src="js/tetromino.js"></script>
+```
+
+ES modules として読み込み。`file://` では動作しないためHTTPサーバー経由が必要。
+
+### 多言語対応
+
+| パス | 言語 | hreflang |
+|------|------|----------|
+| `/index.html` | 日本語 | `ja` |
+| `/en/index.html` | 英語 | `en` |
+
+両ページは `<link rel="alternate" hreflang="...">` で相互リンクされており、Googleが言語ごとに適切なページを検索結果に表示する。
 
 ## インフラ・ドメイン構成
 
@@ -164,27 +246,45 @@ GitHub Actionsを使わずにCI/CDに近い安全性を実現している。Clou
 
 ## ローカルでの実行
 
-ES modulesを使用しているため、HTTPサーバー経由で開く必要があります（file://では動作しません）：
+ES modulesを使用しているため、HTTPサーバー経由で開く必要があります（`file://` では動作しません）：
 
 ```bash
+# npm（推奨）
+npm run serve           # port 3000 で起動
+
 # Python
 python3 -m http.server 9000
 
-# Node.js
+# Node.js（npx直接）
 npx serve
 ```
 
-http://localhost:9000 を開く
-
 ## テスト
 
-```bash
-# 統合テスト
-node test.js            # 79件
+### テスト構成
 
-# モジュール単体テスト
-node js/test-logic.js   # 32件
+| 種別 | ファイル | テスト数 | 実行方法 |
+|------|----------|----------|----------|
+| 単体テスト | `js/test-logic.js` | 32件 | `node js/test-logic.js` |
+| 統合テスト | `test.js` | 79件 | `node test.js` |
+| E2Eテスト | `e2e/game.spec.js` | Playwright | `npm run test:e2e` |
+
+### npm scripts
+
+```bash
+npm test                # 単体テスト + 統合テスト（111件）
+npm run test:e2e        # Playwright E2Eテスト（Chromium）
+npm run test:all        # 全テスト（単体 + 統合 + E2E）
+npm run serve           # 開発サーバー起動（port 3000）
 ```
+
+### Playwright 設定
+
+- テストディレクトリ: `e2e/`
+- ブラウザ: Chromium のみ
+- ヘッドレスモード
+- 外部リソース（Google Fonts、gtag）はブロック
+- 失敗時にスクリーンショットを自動取得
 
 ## SEO・OGP の仕組み
 
@@ -230,12 +330,57 @@ XのサーバーがそのURLにアクセス
 | 検索パフォーマンス | どのキーワードで表示・クリックされたか |
 | URL検査 | 特定URLのインデックス状況を確認 |
 
-## 技術スタック
+## 技術スタック・エコシステム
 
-- HTML / CSS / JavaScript（ES modules）
-- Canvas API によるボード描画
-- タッチイベント対応（iPhone Safari / Android Chrome）
-- マウスホバープレビュー（PC）
-- localStorage によるゲーム保存・戦績記録
-- CPU AI: 攻撃/防御/運の3軸による重み付きスコアリング
-- カラーユニバーサルデザイン準拠パレット
+### ランタイム（外部ライブラリ不要）
+
+| 技術 | 用途 |
+|------|------|
+| HTML5 / CSS3 / JavaScript（ES modules） | フロントエンド全般 |
+| Canvas API | ボード・ピース描画 |
+| localStorage | ゲーム保存・戦績記録 |
+| タッチイベント | iPhone Safari / Android Chrome 対応 |
+| マウスホバー | PC でのプレビュー |
+| Google Fonts (Orbitron) | アーケード風UIフォント |
+| Google Analytics 4 | アクセス解析 |
+
+### 開発ツール
+
+| ツール | バージョン | 用途 |
+|--------|-----------|------|
+| Playwright | ^1.56.0 | E2Eテスト（Chromiumヘッドレス） |
+| serve | ^14.2.6 | ローカル開発サーバー |
+| Node.js | — | テスト実行（カスタムテストランナー） |
+
+### インフラ・ホスティング
+
+| サービス | 役割 |
+|----------|------|
+| Cloudflare Pages | 静的ホスティング（kado-game.pages.dev） |
+| Cloudflare Workers | パスベースルーティング（tetutetu214.com → Pages） |
+| Cloudflare Registrar | ドメイン管理（tetutetu214.com） |
+| Cloudflare DNS | DNS管理（無料） |
+| GitHub | ソースコード管理 |
+| GitHub Actions | GitHub Pages デプロイ（deploy-pages.yml） |
+| Google Search Console | SEO管理・インデックス状況確認 |
+
+### package.json
+
+```json
+{
+  "name": "kado-game",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node test.js && node js/test-logic.js",
+    "test:e2e": "xvfb-run npx playwright test",
+    "test:all": "npm test && npm run test:e2e",
+    "serve": "npx serve -p 3000 --no-clipboard"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "serve": "^14.2.6"
+  }
+}
+```
+
+ランタイム依存は**ゼロ**。devDependencies のみ。
